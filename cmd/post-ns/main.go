@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"github.com/efidoman/xdripgo"
-	"io/ioutil"
 	"log"
 	//	"net/http"
 	"os"
