@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -35,7 +34,6 @@ func PostNightscoutRecord(jsonFile string, nsType string, nsUrl string, nsSecret
 	before := float64(time.Now().UnixNano()) / 1000000000.0
 	resp, err := client.Do(req)
 	if err != nil {
-		curlStatus = -2
 		log.Fatal(err)
 	}
 	after := float64(time.Now().UnixNano()) / 1000000000.0
