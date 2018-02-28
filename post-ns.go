@@ -23,8 +23,7 @@ func PostNightscoutRecord(jsonFile string, url string, nsSecret string) (err err
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("API-SECRET", nsSecret)
 
-	//	timeout := time.Duration(5 * time.Second)
-	timeout := time.Duration(5 * time.Second)
+	timeout := time.Duration(6 * time.Second)
 	client := &http.Client{
 		Timeout: timeout,
 	}
