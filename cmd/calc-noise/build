@@ -25,8 +25,8 @@ fi
 
 if [ "$CHECKIN" != "" ]; then 
  echo "Checking in $FILES into $BRANCH"
- git add $FILES 
- git commit -m "\"${CHECKIN}\""
+ git add -u $FILES 
+ git commit -a -m "\"${CHECKIN}\""
  git push origin $BRANCH
 fi
 
