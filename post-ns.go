@@ -2,7 +2,7 @@ package xdripgo
 
 import (
 	"bytes"
-	"fmt"
+	//	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -28,15 +28,15 @@ func PostNightscoutRecord(jsonFile string, url string, nsSecret string) (err err
 		Timeout: timeout,
 	}
 
-	before := float64(time.Now().UnixNano()) / 1000000000.0
+	//	before := float64(time.Now().UnixNano()) / 1000000000.0
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
-	after := float64(time.Now().UnixNano()) / 1000000000.0
-	elapsed := after - before
+	//	after := float64(time.Now().UnixNano()) / 1000000000.0
+	//	elapsed := after - before
 	defer resp.Body.Close()
-	fmt.Printf("before=%f, after=%f, elapsed=%f\n", before, after, elapsed)
+	//	fmt.Printf("before=%f, after=%f, elapsed=%f\n", before, after, elapsed)
 
 	respB, _ := ioutil.ReadAll(resp.Body)
 	return err, string(respB)
