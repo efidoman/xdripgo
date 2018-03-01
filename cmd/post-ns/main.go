@@ -28,18 +28,18 @@ var curlStatus int = -1
 
 func main() {
 
-        inputjsonfilePtr := flag.String("input", "test.json", "Nightscout json record file for posting")
-        typePtr := flag.String("type", "entries", "Nightscout record type")
-        timeoutPtr := flag.String("timeout", 5, "Number of seconds to wait on Post response before timing out")
+	inputjsonfilePtr := flag.String("input", "test.json", "Nightscout json record file for posting")
+	typePtr := flag.String("type", "entries", "Nightscout record type")
+	timeoutPtr := flag.String("timeout", 5, "Number of seconds to wait on Post response before timing out")
 
 	flag.Parse()
-        fmt.Fprintf(os.Stderr, "*timeoutPtr=%d\n", *timeoutPtr
+	fmt.Fprintf(os.Stderr, "*timeoutPtr=%d\n", *timeoutPtr)
 
-//	flag.Usage = usage
+	//	flag.Usage = usage
 
-//	if flag.NArg() < 2 {
-//		usage()
-//	}
+	//	if flag.NArg() < 2 {
+	//		usage()
+	//	}
 
 	url := fmt.Sprintf("%s/api/v1/%s.json", os.Getenv("NIGHTSCOUT_HOST"), *typePtr)
 
