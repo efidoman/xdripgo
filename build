@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CHECKIN=${1:-""}
-FILES=${2:-"*.go build"}
+FILES=${2:-"*.go build*"}
 BRANCH=${3:-"master"}
 SRC=${4:-"*.go"}
 

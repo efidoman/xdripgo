@@ -1,0 +1,7 @@
+#!/bin/bash
+
+CHECKIN=${1:-""}
+
+./build $CHECKIN
+cd ./cmd/post-ns && ./build $CHECKIN
+
