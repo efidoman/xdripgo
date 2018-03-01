@@ -22,7 +22,6 @@ func SaveNoiseToOutputJsonFile(noise float64, outputFile string) {
 	b, err := json.Marshal(output)
 	if err == nil {
 		fmt.Println(string(b))
-
 		_ = ioutil.WriteFile(outputFile, b, 0644)
 	} else {
 		log.Fatal(err)
