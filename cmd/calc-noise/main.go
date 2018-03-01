@@ -1,3 +1,5 @@
+// calc-noise
+
 package main
 
 import (
@@ -5,28 +7,18 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/efidoman/xdripgo/mathutils"
 	"io"
 	"io/ioutil"
 	"log"
 	"math"
 	"os"
-	"strconv"
 )
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: %s [options] inputcsvfile outputjsonfile\n", os.Args[0])
 	flag.PrintDefaults()
 	os.Exit(1)
-}
-
-func Round(x float64, digits int) float64 {
-	s := strconv.FormatFloat(x, 'f', digits, 64)
-	var yo float64
-	if _, err := fmt.Sscan(s, &yo); err != nil {
-		log.Print("Calculate Noise Rounding - ", err)
-	}
-	return yo
-
 }
 
 type NoiseS struct {
@@ -153,10 +145,10 @@ func main() {
 		noise = 1 - (overallDistance / sod)
 	}
 
-	noise = Round(noise, 5)
-	sod = Round(sod, 5)
-	overallDistance = Round(overallDistance, 5)
-	log.Print("sod=", sod, ", overallDistance=", overallDistance, ", noise=", noise)
+	noise = mathutils.Round(noise, 5)
+	sod = mathutils.Round(sod, 5)
+	overallDistance = mathutils.Round(overallDistance, 5)
+	//	log.Print("sod=", sod, ", overallDistance=", overallDistance, ", noise=", noise)
 	ReportNoiseAndExit(noise, flag.Arg(1))
 
 }
