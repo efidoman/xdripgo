@@ -2,7 +2,6 @@ package xdripgo
 
 import (
 	"bytes"
-	//	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
