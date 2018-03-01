@@ -30,7 +30,7 @@ func main() {
 
 	inputjsonfilePtr := flag.String("input", "test.json", "Nightscout json record file for posting")
 	typePtr := flag.String("type", "entries", "Nightscout record type")
-	timeoutPtr := flag.String("timeout", 5, "Number of seconds to wait on Post response before timing out")
+	timeoutPtr := flag.Int("timeout", 5, "Number of seconds to wait on Post response before timing out")
 
 	flag.Parse()
 	fmt.Fprintf(os.Stderr, "*timeoutPtr=%d\n", *timeoutPtr)
