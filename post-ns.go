@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func PostNightscoutRecord(jsonFile string, url string, nsSecret string) (err error, body string) {
+func PostNightscoutRecord(jsonFile string, url string, nsSecret string, secondsTimeout int) (err error, body string) {
 
 	b, err := ioutil.ReadFile(jsonFile) // just pass the file name
 	if err != nil {
@@ -22,7 +22,7 @@ func PostNightscoutRecord(jsonFile string, url string, nsSecret string) (err err
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("API-SECRET", nsSecret)
 
-	timeout := time.Duration(6 * time.Second)
+	timeout := time.Duration(time.Duration(secondsTimeout) * time.Second)
 	client := &http.Client{
 		Timeout: timeout,
 	}

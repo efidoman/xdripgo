@@ -33,7 +33,7 @@ func main() {
 	timeoutPtr := flag.Int("timeout", 5, "Number of seconds to wait on Post response before timing out")
 
 	flag.Parse()
-	fmt.Fprintf(os.Stderr, "*timeoutPtr=%d\n", *timeoutPtr)
+	//	fmt.Fprintf(os.Stderr, "*timeoutPtr=%d\n", *timeoutPtr)
 
 	//	flag.Usage = usage
 
@@ -43,7 +43,7 @@ func main() {
 
 	url := fmt.Sprintf("%s/api/v1/%s.json", os.Getenv("NIGHTSCOUT_HOST"), *typePtr)
 
-	err, body := xdripgo.PostNightscoutRecord(*inputjsonfilePtr, url, os.Getenv("API_SECRET"))
+	err, body := xdripgo.PostNightscoutRecord(*inputjsonfilePtr, url, os.Getenv("API_SECRET"), *timeoutPtr)
 	if err != nil {
 		log.Fatal(err)
 		curlStatus = -2
