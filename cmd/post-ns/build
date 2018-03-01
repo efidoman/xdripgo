@@ -1,0 +1,24 @@
+#!/bin/bash
+
+CHECKIN=${1:-""}
+FILES=${2:-"build main.go"}
+BRANCH=${3:-"master"}
+
+EXE=${PWD##*/} 
+
+echo "formatting $EXE.go"
+gofmt -w *.go
+echo "building $EXE.go"
+go build
+ls -al $EXE
+
+if [ "$CHECKIN" != "" ]; then 
+ echo "Checking in $FILES into $BRANCH"
+ git add $FILES 
+ git commit -m "\"${CHECKIN}\""
+fi
+
+
+
+
+
