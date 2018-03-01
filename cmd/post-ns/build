@@ -12,6 +12,17 @@ echo "building $EXE.go"
 go build
 ls -al $EXE
 
+FULLPATH="$(pwd)/$EXE"
+
+if [ -e "$EXE" ]; then
+  echo "removing $EXE link in /usr/local/bin"
+  rm -f /usr/local/bin/$EXE
+  echo "Linking $FULLPATH to /usr/local/bin"
+  ln -s $FULLPATH /usr/local/bin/$EXE
+else
+  echo "Build Failure, not installing link to /usr/local/bin"
+fi
+
 if [ "$CHECKIN" != "" ]; then 
  echo "Checking in $FILES into $BRANCH"
  git add $FILES 
