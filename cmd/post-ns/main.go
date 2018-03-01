@@ -33,7 +33,7 @@ func main() {
 		usage()
 	}
 
-	url := fmt.Sprintf("%s/api/v1/%s/.json", os.Getenv("NIGHTSCOUT_HOST"), flag.Arg(1))
+	url := fmt.Sprintf("%s/api/v1/%s.json", os.Getenv("NIGHTSCOUT_HOST"), flag.Arg(1))
 
 	err, body := xdripgo.PostNightscoutRecord(flag.Arg(0), url, os.Getenv("API_SECRET"))
 	if err != nil {
