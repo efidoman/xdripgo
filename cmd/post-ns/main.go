@@ -18,26 +18,32 @@ import (
 
 var curlStatus int = -1
 
-func usage() {
-	fmt.Fprintf(os.Stderr, "usage: %s inputjsonfile type\n", os.Args[0])
-	fmt.Fprintf(os.Stderr, "          inputjsonfile = Nightscout json record file\n")
-	fmt.Fprintf(os.Stderr, "          type = Nightscout record type, default is \"entries\"\n")
-	flag.PrintDefaults()
-	os.Exit(curlStatus)
-}
+//func usage() {
+////	fmt.Fprintf(os.Stderr, "usage: %s inputjsonfile type\n", os.Args[0])
+//	fmt.Fprintf(os.Stderr, "          inputjsonfile = Nightscout json record file\n")
+//	fmt.Fprintf(os.Stderr, "          type = Nightscout record type, default is \"entries\"\n")
+//	flag.PrintDefaults()
+//	os.Exit(curlStatus)
+//}
 
 func main() {
 
+        inputjsonfilePtr := flag.String("input", "test.json", "Nightscout json record file for posting")
+        typePtr := flag.String("type", "entries", "Nightscout record type")
+        timeoutPtr := flag.String("timeout", 5, "Number of seconds to wait on Post response before timing out")
+
 	flag.Parse()
-	flag.Usage = usage
+        fmt.Fprintf(os.Stderr, "*timeoutPtr=%d\n", *timeoutPtr
 
-	if flag.NArg() < 2 {
-		usage()
-	}
+//	flag.Usage = usage
 
-	url := fmt.Sprintf("%s/api/v1/%s.json", os.Getenv("NIGHTSCOUT_HOST"), flag.Arg(1))
+//	if flag.NArg() < 2 {
+//		usage()
+//	}
 
-	err, body := xdripgo.PostNightscoutRecord(flag.Arg(0), url, os.Getenv("API_SECRET"))
+	url := fmt.Sprintf("%s/api/v1/%s.json", os.Getenv("NIGHTSCOUT_HOST"), *typePtr)
+
+	err, body := xdripgo.PostNightscoutRecord(*inputjsonfilePtr, url, os.Getenv("API_SECRET"))
 	if err != nil {
 		log.Fatal(err)
 		curlStatus = -2
