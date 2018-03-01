@@ -1,0 +1,20 @@
+#!/bin/bash
+
+CHECKIN=${1:-""}
+FILES=${2:-"*.go build*"}
+BRANCH=${3:-"master"}
+SRC=${4:-"*.go"}
+
+echo "formatting and building $SRC"
+gofmt -w $SRC && go build $SRC 
+
+if [ "$CHECKIN" != "" ]; then 
+ echo "Checking in $FILES into $BRANCH"
+ git add $FILES
+ git commit -m "\"${CHECKIN}\""
+ git push origin $BRANCH
+ go get -u github.com/efidoman/xdripgo
+fi
+
+
+
