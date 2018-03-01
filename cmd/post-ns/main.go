@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"github.com/efidoman/xdripgo"
 	"log"
-	//	"net/http"
 	"os"
-	//	"time"
 )
 
 //
@@ -31,20 +29,13 @@ func main() {
 	flag.Parse()
 	flag.Usage = usage
 
-	var nsUrl string = os.Getenv("NIGHTSCOUT_HOST")
-	var nsSecret string = os.Getenv("API_SECRET")
-
-	//fmt.Fprintf(os.Stderr, "nsUrl=%s, nsSecret=%s\n", nsUrl, nsSecret)
-
 	if flag.NArg() < 2 {
 		usage()
 	}
-	//fmt.Fprintf(os.Stderr, "arg0=%s\n", flag.Arg(0))
-	//fmt.Fprintf(os.Stderr, "arg1=%s\n", flag.Arg(1))
 
-	jsonFile := flag.Arg(0)
-	nsType := flag.Arg(1)
-	err, body := PostNightscoutRecord(jsonFile, nsType, nsUrl, nsSecret)
+	url := fmt.Sprintf("%s/api/v1/%s/.json", os.Getenv("NIGHTSCOUT_HOST"), flag.Arg(1))
+
+	err, body := xdripgo.PostNightscoutRecord(flag.Arg(0), url, os.Getenv("API_SECRET"))
 	if err != nil {
 		log.Fatal(err)
 		curlStatus = -2
