@@ -3,34 +3,16 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"github.com/efidoman/xdripgo"
+	"github.com/efidoman/xdripgo/messages"
 	"log"
-	"os"
 )
 
-func usage() {
-	fmt.Fprintf(os.Stderr, "usage: %s [options] inputcsvfile outputjsonfile\n", os.Args[0])
-	flag.PrintDefaults()
-	//	os.Exit(1)
-}
-
 func main() {
+// Test Messsages
 
-	flag.Parse()
+        data := make([]byte, 17)
+        data[0] = 0x03
+	m := AuthChallengeRxMessage.New(data)
+	log.Print("AuthChallengeRxMessage Opcode = ", m.Opcode)
 
-	flag.Usage = usage
-	if flag.NArg() < 0 {
-		usage()
-	}
-
-	//	noise, err := xdripgo.CalculateNoise(flag.Arg(0), flag.Arg(1))
-	//	if err != nil {
-	//		usage()
-	//	}
-	var data []byte
-	xdripgo.NewAuthChallengeRxMessage(data)
-
-	log.Print("Calculated noise = ")
 }
