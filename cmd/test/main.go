@@ -41,4 +41,16 @@ func main() {
 	g := messages.NewCalibrateGlucoseTxMessage(100, 0) // 1970
 	log.Print("CalibrateGlucoseTxMessage Opcode = ", g.Opcode)
 	log.Print("CalibrateGlucoseTxMessage Data = ", g.Data)
+
+        d1 := make([]byte, 5)
+        d1[0] = 0x35
+	h := messages.NewCalibrateGlucoseRxMessage(d1)
+	log.Print("CalibrateGlucoseRxMessage Opcode = ", h.Opcode)
+	log.Print("CalibrateGlucoseRxMessage Data = ", h.Data)
+
+        data[0] = 0x32
+	i := messages.NewCalibrationDataTxMessage()
+	log.Print("CalibrationDataTxMessage Opcode = ", i.Opcode)
+	log.Print("CalibrationDataTxMessage Data = ", i.Data)
+
 }
