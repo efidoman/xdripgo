@@ -24,4 +24,21 @@ func main() {
 	c := messages.NewAuthRequestTxMessage()
 	log.Print("AuthRequestTxMessage Opcode = ", c.Opcode)
 	log.Print("AuthRequestTxMessage Data = ", c.Data)
+
+	d := messages.NewBackfillTxMessage(0, 64)
+	log.Print("BackfillTxMessage Opcode = ", d.Opcode)
+	log.Print("BackfillTxMessage Data = ", d.Data)
+
+	e := messages.NewBondRequestTxMessage()
+	log.Print("BondRequestTxMessage Opcode = ", e.Opcode)
+	log.Print("BondRequestTxMessage Data = ", e.Data)
+
+        data[0] = 0x08
+	f := messages.NewBondRequestRxMessage(data)
+	log.Print("BondRequestRxMessage Opcode = ", f.Opcode)
+	log.Print("BondRequestRxMessage Succeeded = ", f.Succeeded)
+
+	g := messages.NewCalibrateGlucoseTxMessage(100, 0) // 1970
+	log.Print("CalibrateGlucoseTxMessage Opcode = ", g.Opcode)
+	log.Print("CalibrateGlucoseTxMessage Data = ", g.Data)
 }
