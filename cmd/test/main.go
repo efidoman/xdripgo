@@ -12,7 +12,16 @@ func main() {
 
         data := make([]byte, 17)
         data[0] = 0x03
-	m := AuthChallengeRxMessage.New(data)
-	log.Print("AuthChallengeRxMessage Opcode = ", m.Opcode)
 
+	a := messages.NewAuthChallengeRxMessage(data)
+	log.Print("AuthChallengeRxMessage Opcode = ", a.Opcode)
+//	log.Print("AuthChallengeRxMessage Data = ", a.Data)
+
+	b := messages.NewAuthChallengeTxMessage(data)
+	log.Print("AuthChallengeTxMessage Opcode = ", b.Opcode)
+	log.Print("AuthChallengeTxMessage Data = ", b.Data)
+
+	c := messages.NewAuthRequestTxMessage()
+	log.Print("AuthRequestTxMessage Opcode = ", c.Opcode)
+	log.Print("AuthRequestTxMessage Data = ", c.Data)
 }
