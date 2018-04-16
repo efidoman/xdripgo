@@ -2,7 +2,9 @@
   {
     "enteredBy": "OpenAPS",
     "reason": "testing",
-    "eventType": "Note",
+    "unfiltered": 127122,
+    "glucose": 127,
+    "eventType": "Calibration",
     "notes": "Testing Yo a note",
     "glucoseType": "Finger",
     "units": "mg/dl"
