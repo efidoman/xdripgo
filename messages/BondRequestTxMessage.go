@@ -10,7 +10,7 @@ func NewBondRequestTxMessage() BondRequestTxMessage {
 	m.Opcode = 0x07
 	d := make([]byte, 1)
 	d[0] = m.Opcode
-        m.Data = d
+	m.Data = d
 
 	return m
 }

@@ -20,8 +20,8 @@ func NewCalibrateGlucoseRxMessage(data []byte) CalibrateGlucoseRxMessage {
 	if data[0] != m.Opcode {
 		log.Print("Cannot create CalibrateGlucoseRxMessage - Response from CalibrateGlucoseRxMessage not correct. Opcode should be = ", m.Opcode, " but data response Opcode is ", data[0])
 	}
-// TODO: work out what the payload is
-// presumably calibration succeeded / rejected
+	// TODO: work out what the payload is
+	// presumably calibration succeeded / rejected
 	m.Data = data
 
 	return m

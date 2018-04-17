@@ -21,7 +21,7 @@ func NewCalibrationDataTxMessage() CalibrationDataTxMessage {
 
 	e := make([]byte, 3)
 
-        e[0] = d[0]
+	e[0] = d[0]
 	copy(e[1:3], crc)
 	m.Data = e
 
