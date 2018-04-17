@@ -1,7 +1,6 @@
 package messages
 
 import (
-	"encoding/binary"
 	"github.com/efidoman/xdripgo/mathutils"
 )
 
