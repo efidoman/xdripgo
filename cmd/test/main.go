@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/efidoman/xdripgo/messages"
 	"log"
 )
@@ -45,12 +46,16 @@ func main() {
         d1 := make([]byte, 5)
         d1[0] = 0x35
 	h := messages.NewCalibrateGlucoseRxMessage(d1)
-	log.Print("CalibrateGlucoseRxMessage Opcode = ", h.Opcode)
+	log.Print("CalibrateGlucoseRxMessage Opcode (should be 35) = ", h.Opcode)
 	log.Print("CalibrateGlucoseRxMessage Data = ", h.Data)
 
-        data[0] = 0x32
 	i := messages.NewCalibrationDataTxMessage()
 	log.Print("CalibrationDataTxMessage Opcode = ", i.Opcode)
-	log.Print("CalibrationDataTxMessage Data = ", i.Data)
+	log.Print("CalibrationDataTxMessage Data (should be 32) = ", i.Data)
+
+        data[0] = 0x42
+	j := messages.NewResetTxMessage()
+	fmt.Printf("ResetTxMessage Opcode (should be 42) = %x\n", j.Opcode)
+	fmt.Printf("ResetTxMessage Data = %x\n", j.Data)
 
 }
