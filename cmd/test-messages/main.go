@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/efidoman/xdripgo/messages"
 	"time"
@@ -83,4 +84,23 @@ func main() {
 	o := messages.NewGlucoseTxMessage()
 	fmt.Printf("%T Opcode (0x30) = %x\n", o, o.Opcode)
 	fmt.Printf("   Data = %x\n", o.Data)
+
+	d3, _ := hex.DecodeString("31009d040000c41708000500057f6f12")
+	p := messages.NewGlucoseRxMessage(d3)
+	fmt.Printf("%T Opcode (0x31) = %x\n", p, p.Opcode)
+	fmt.Printf("   Glucose = %d\n", p.Glucose)
+	fmt.Printf("   GlucoseBytes = %d\n", p.GlucoseBytes)
+	fmt.Printf("   Timestamp = %d\n", p.Timestamp)
+	fmt.Printf("   State = %d\n", p.State)
+	fmt.Printf("   Status = %d\n", p.Status)
+	fmt.Printf("   Sequence = %d\n", p.Sequence)
+	fmt.Printf("   Trend = %d\n", p.Trend)
+	fmt.Printf("   GlucoseIsDisplayOnly = %d\n", p.GlucoseIsDisplayOnly)
+
+	d4, _ := hex.DecodeString("2f00cc1e080020310200e03602007aaf")
+	q := messages.NewSensorRxMessage(d4)
+	fmt.Printf("%T Opcode (0x2f) = %x\n", q, q.Opcode)
+	fmt.Printf("   Timestamp = %d\n", q.Timestamp)
+	fmt.Printf("   Unfiltered = %d\n", q.Unfiltered)
+	fmt.Printf("   Filtered = %d\n", q.Filtered)
 }
