@@ -107,4 +107,47 @@ func main() {
 	r := messages.NewSessionStartTxMessage(uint32(secs))
 	fmt.Printf("%T Opcode (0x26) = %x\n", r, r.Opcode)
 	fmt.Printf("   Data = %x\n", r.Data)
+
+	d5, _ := hex.DecodeString("2700cc1e080020310200e03602007aaf00")
+	s := messages.NewSessionStartRxMessage(d5)
+	fmt.Printf("%T Opcode (0x27) = %x\n", s, s.Opcode)
+	fmt.Printf("   Status = %d\n", s.Status)
+	fmt.Printf("   Received = %d\n", s.Received)
+	fmt.Printf("   RequestedStartTime = %d\n", s.RequestedStartTime)
+	fmt.Printf("   SessionStartTime = %d\n", s.SessionStartTime)
+	fmt.Printf("   TransmitterTime = %d\n", s.TransmitterTime)
+
+	t := messages.NewSessionStopTxMessage(uint32(secs))
+	fmt.Printf("%T Opcode (0x28) = %x\n", t, t.Opcode)
+	fmt.Printf("   Data = %x\n", t.Data)
+
+	d6, _ := hex.DecodeString("2900cc1e080020310200e03602007aaf00")
+	u := messages.NewSessionStopRxMessage(d6)
+	fmt.Printf("%T Opcode (0x29) = %x\n", u, u.Opcode)
+	fmt.Printf("   Status = %d\n", u.Status)
+	fmt.Printf("   Received = %d\n", u.Received)
+	fmt.Printf("   RequestedStopTime = %d\n", u.RequestedStopTime)
+	fmt.Printf("   SessionStopTime = %d\n", u.SessionStopTime)
+	fmt.Printf("   TransmitterTime = %d\n", u.TransmitterTime)
+
+	v := messages.NewTransmitterTimeTxMessage()
+	fmt.Printf("%T Opcode (0x24) = %x\n", v, v.Opcode)
+	fmt.Printf("   Data = %x\n", v.Data)
+
+	d7, _ := hex.DecodeString("2500cc1e080020310200e03602007aaf")
+	x := messages.NewTransmitterTimeRxMessage(d7)
+	fmt.Printf("%T Opcode (0x25) = %x\n", x, x.Opcode)
+	fmt.Printf("   Status = %d\n", x.Status)
+	fmt.Printf("   currentTime = %d\n", x.CurrentTime)
+	fmt.Printf("   SessionStartTime = %d\n", x.SessionStartTime)
+
+	y := messages.NewVersionRequestTxMessage()
+	fmt.Printf("%T Opcode (0x4a) = %x\n", y, y.Opcode)
+	fmt.Printf("   Data = %x\n", y.Data)
+
+	d8, _ := hex.DecodeString("4b000100040adf2900002800037000f0006e35")
+	z := messages.NewVersionRequestRxMessage(d8)
+	fmt.Printf("%T Opcode (0x25) = %x\n", z, z.Opcode)
+	fmt.Printf("   Status = %d\n", z.Status)
+	fmt.Printf("   Version = %s\n", z.Version)
 }
