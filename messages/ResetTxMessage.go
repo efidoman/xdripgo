@@ -1,7 +1,7 @@
 package messages
 
 import (
-	"github.com/efidoman/xdripgo/mathutils"
+	"github.com/efidoman/xdripgo/packet"
 )
 
 type ResetTxMessage struct {
@@ -14,12 +14,14 @@ func NewResetTxMessage() ResetTxMessage {
 
 	m.Opcode = 0x42
 
-	d := make([]byte, 3)
+	d := make([]byte, 1)
 	d[0] = m.Opcode
+	d = packet.AppendCrc16(d)
 
-	crc := mathutils.MarshalUint16(mathutils.Crc16(d))
-
-	copy(d[1:3], crc)
+	/*
+		crc := packet.MarshalUint16(packet.Crc16(d))
+		copy(d[1:3], crc)
+	*/
 	m.Data = d
 
 	return m

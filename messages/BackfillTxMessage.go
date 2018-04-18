@@ -2,7 +2,7 @@ package messages
 
 import (
 	"encoding/binary"
-	"github.com/efidoman/xdripgo/mathutils"
+	"github.com/efidoman/xdripgo/packet"
 )
 
 type BackfillTxMessage struct {
@@ -27,13 +27,18 @@ func NewBackfillTxMessage(timestampStart uint32, timestampEnd uint32) BackfillTx
 	copy(d[1:5], bs)
 	copy(d[5:9], be)
 
-	crc := mathutils.MarshalUint16(mathutils.Crc16(d))
+	d = packet.AppendCrc16(d)
 
-	e := make([]byte, 11)
+	/*
+		crc := packet.MarshalUint16(packet.Crc16(d))
 
-	copy(e[0:9], d)
-	copy(e[9:11], crc)
-	m.Data = e
+		e := make([]byte, 11)
+
+		copy(e[0:9], d)
+		copy(e[9:11], crc)
+		m.Data = e
+	*/
+	m.Data = d
 
 	return m
 }

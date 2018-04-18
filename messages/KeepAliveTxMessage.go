@@ -1,7 +1,7 @@
 package messages
 
 import (
-	"github.com/efidoman/xdripgo/mathutils"
+	"github.com/efidoman/xdripgo/packet"
 )
 
 type KeepAliveTxMessage struct {
@@ -17,7 +17,7 @@ func NewKeepAliveTxMessage(timestamp uint32) KeepAliveTxMessage {
 	d := make([]byte, 5)
 	d[0] = m.Opcode
 
-	tbuffer := mathutils.MarshalUint32(timestamp)
+	tbuffer := packet.MarshalUint32(timestamp)
 
 	copy(d[1:5], tbuffer)
 	m.Data = d

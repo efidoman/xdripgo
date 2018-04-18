@@ -2,7 +2,7 @@ package messages
 
 import (
 	"encoding/binary"
-	"github.com/efidoman/xdripgo/mathutils"
+	"github.com/efidoman/xdripgo/packet"
 )
 
 type CalibrateGlucoseTxMessage struct {
@@ -27,13 +27,18 @@ func NewCalibrateGlucoseTxMessage(glucose uint16, timestamp uint32) CalibrateGlu
 	copy(d[1:3], g)
 	copy(d[3:7], t)
 
-	crc := mathutils.MarshalUint16(mathutils.Crc16(d))
+	d = packet.AppendCrc16(d)
 
-	e := make([]byte, 9)
+	/*
+		crc := packet.MarshalUint16(packet.Crc16(d))
 
-	copy(e[0:7], d)
-	copy(e[7:9], crc)
-	m.Data = e
+		e := make([]byte, 9)
+
+		copy(e[0:7], d)
+		copy(e[7:9], crc)
+		m.Data = e
+	*/
+	m.Data = d
 
 	return m
 }

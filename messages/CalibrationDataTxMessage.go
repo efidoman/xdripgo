@@ -1,7 +1,7 @@
 package messages
 
 import (
-	"github.com/efidoman/xdripgo/mathutils"
+	"github.com/efidoman/xdripgo/packet"
 )
 
 type CalibrationDataTxMessage struct {
@@ -17,13 +17,18 @@ func NewCalibrationDataTxMessage() CalibrationDataTxMessage {
 	d := make([]byte, 1)
 	d[0] = m.Opcode
 
-	crc := mathutils.MarshalUint16(mathutils.Crc16(d))
+	d = packet.AppendCrc16(d)
 
-	e := make([]byte, 3)
+	/*
+		crc := packet.MarshalUint16(packet.Crc16(d))
 
-	e[0] = d[0]
-	copy(e[1:3], crc)
-	m.Data = e
+		e := make([]byte, 3)
+
+		e[0] = d[0]
+		copy(e[1:3], crc)
+		m.Data = e
+	*/
+	m.Data = d
 
 	return m
 }

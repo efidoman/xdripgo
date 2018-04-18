@@ -2,7 +2,7 @@ package messages
 
 import (
 	//	"encoding/binary"
-	"github.com/efidoman/xdripgo/mathutils"
+	"github.com/efidoman/xdripgo/packet"
 	"log"
 )
 
@@ -24,8 +24,8 @@ func NewCalibrationDataRxMessage(data []byte) CalibrationDataRxMessage {
 			log.Print("Cannot create CalibrationDataRxMessage - Response is not correct. Opcode should be = ", m.Opcode, " but data response Opcode is ", data[0])
 		}
 
-		m.Glucose = mathutils.UnmarshalUint16(data[11:13])
-		m.Timestamp = mathutils.UnmarshalUint32(data[13:17])
+		m.Glucose = packet.UnmarshalUint16(data[11:13])
+		m.Timestamp = packet.UnmarshalUint32(data[13:17])
 	}
 	return m
 }
