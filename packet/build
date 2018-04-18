@@ -9,7 +9,7 @@ echo "formatting and building $SRC"
 gofmt -w $SRC && go build $SRC 
 
 if [ "$CHECKIN" != "" ]; then 
- echo "Checking in $FILES into $BRANCH"
+  echo "Checking in $FILES into $BRANCH"
  git add $FILES
  git commit -m "\"${CHECKIN}\""
  git push origin $BRANCH
