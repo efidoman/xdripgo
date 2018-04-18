@@ -103,4 +103,8 @@ func main() {
 	fmt.Printf("   Timestamp = %d\n", q.Timestamp)
 	fmt.Printf("   Unfiltered = %d\n", q.Unfiltered)
 	fmt.Printf("   Filtered = %d\n", q.Filtered)
+
+	r := messages.NewSessionStartTxMessage(uint32(secs))
+	fmt.Printf("%T Opcode (0x26) = %x\n", r, r.Opcode)
+	fmt.Printf("   Data = %x\n", r.Data)
 }

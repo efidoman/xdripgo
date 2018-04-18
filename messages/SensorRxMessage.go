@@ -32,13 +32,17 @@ func NewSensorRxMessage(data []byte) SensorRxMessage {
 	return m
 }
 
+// 2f 00 bf 2f 07 00 60 67 02 00 c0 6d 02 00 f9 7b
 // 2f 00 cc 1e 08 00 20 31 02 00 e0 36 02 00 7a af
+// Timestamp is crap - do time.Now()
 
 // packet format - example TODO - finish documenting
+// TODO: use transmitterStartDate to calculate timestamp - has to happen
+//   readDate = transmitterStartDate + glucoseMessage.timestamp * 1000
 // +--------+--------+-------------+-------------+-------------+
 // | [0]    | [1]    | [2-5]       | [6-9]       | [10-13]     |
 // +--------+--------+-------------+-------------+-------------+
-// | opcode | Status | Timestamp   | Unfiltered  | Filtered    |
+// | opcode | Status | Timstmp crap| Unfiltered  | Filtered    |
 // +--------+--------+-------------+-------------+-------------+
 // | 2f     | 00 cc  | 1e 08 00 20 | 31 02 00 e0 | 36 02 7a af |
 // +--------+--------+-------------+-------------+-------------+
