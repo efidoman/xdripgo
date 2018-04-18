@@ -1,4 +1,4 @@
-package mathutils
+package packet
 
 import (
 	"fmt"
