@@ -29,4 +29,3 @@ func NewGlucoseTxMessage() GlucoseTxMessage {
 // +--------+----------------+
 // | 30     | 53 36          |
 // +--------+----------------+
-

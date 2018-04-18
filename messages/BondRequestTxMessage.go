@@ -23,4 +23,3 @@ func NewBondRequestTxMessage() BondRequestTxMessage {
 // +--------+
 // | 07     |
 // +--------+
-

@@ -31,5 +31,3 @@ func NewCalibrationDataTxMessage() CalibrationDataTxMessage {
 // +--------+----------------+
 // | 32     | 11 16          |
 // +--------+----------------+
-
-
