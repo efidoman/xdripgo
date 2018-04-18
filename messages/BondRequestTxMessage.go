@@ -14,3 +14,13 @@ func NewBondRequestTxMessage() BondRequestTxMessage {
 
 	return m
 }
+
+// packet format
+// +--------+
+// | [0]    |
+// +--------+
+// | opcode |
+// +--------+
+// | 07     |
+// +--------+
+

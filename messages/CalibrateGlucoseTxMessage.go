@@ -28,16 +28,6 @@ func NewCalibrateGlucoseTxMessage(glucose uint16, timestamp uint32) CalibrateGlu
 	copy(d[3:7], t)
 
 	d = packet.AppendCrc16(d)
-
-	/*
-		crc := packet.MarshalUint16(packet.Crc16(d))
-
-		e := make([]byte, 9)
-
-		copy(e[0:7], d)
-		copy(e[7:9], crc)
-		m.Data = e
-	*/
 	m.Data = d
 
 	return m

@@ -20,3 +20,12 @@ func NewSensorTxMessage() SensorTxMessage {
 	m.Data = d
 	return m
 }
+// packet format
+// +--------+----------------+
+// | [0]    | [1-2]          |
+// +--------+----------------+
+// | opcode | CRC            |
+// +--------+----------------+
+// | 2e     | ac c5          |
+// +--------+----------------+
+

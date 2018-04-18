@@ -28,16 +28,6 @@ func NewBackfillTxMessage(timestampStart uint32, timestampEnd uint32) BackfillTx
 	copy(d[5:9], be)
 
 	d = packet.AppendCrc16(d)
-
-	/*
-		crc := packet.MarshalUint16(packet.Crc16(d))
-
-		e := make([]byte, 11)
-
-		copy(e[0:9], d)
-		copy(e[9:11], crc)
-		m.Data = e
-	*/
 	m.Data = d
 
 	return m
