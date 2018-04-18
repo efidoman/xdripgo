@@ -75,4 +75,12 @@ func main() {
 	m := messages.NewKeepAliveTxMessage(uint32(secs))
 	fmt.Printf("%T Opcode (0x06) = %x\n", m, m.Opcode)
 	fmt.Printf("   Data = %x\n", m.Data)
+
+	n := messages.NewSensorTxMessage()
+	fmt.Printf("%T Opcode (0x2e) = %x\n", n, n.Opcode)
+	fmt.Printf("   Data = %x\n", n.Data)
+
+	o := messages.NewGlucoseTxMessage()
+	fmt.Printf("%T Opcode (0x30) = %x\n", o, o.Opcode)
+	fmt.Printf("   Data = %x\n", o.Data)
 }
