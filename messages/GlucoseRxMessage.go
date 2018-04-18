@@ -7,7 +7,6 @@ import (
 
 type GlucoseRxMessage struct {
 	Opcode               byte
-	Data                 []byte
 	Glucose              uint16
 	GlucoseBytes         uint16
 	Timestamp            uint32
@@ -39,3 +38,12 @@ func NewGlucoseRxMessage(data []byte) GlucoseRxMessage {
 	}
 	return m
 }
+
+// packet format - example TODO - finish documenting
+// +--------+--------+-------------+-------------+---------+
+// | [0]    | [1]    | [2-5]       | [6-9]       | [10-11] |
+// +--------+--------+-------------+-------------+---------+
+// | opcode | Status | Sequence    | Timestamp   | Glucose |
+// +--------+--------+-------------+-------------+---------+
+// | 31     | 00 9d  | 04 00 00 c4 | 17 08 00 05 | 00 05   |
+// +--------+--------+-------------+-------------+---------+
