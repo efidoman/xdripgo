@@ -34,6 +34,19 @@ func findDevice(conn *ble.Connection) (ble.Device, error) {
 func main() {
 	dev := "DexcomFE"
 	conn, err := ble.Open()
+
+	uuids := make([]string, 2)
+
+	uuids[0] = "febc"
+	uuids[1] = "f8083532-849e-531c-c594-30f1f86a4ea5"
+	device, err := conn.Discover(0, uuids...)
+	if err != nil {
+		log.Fatal(err)
+	}
+	device.Print(os.Stdout)
+
+	os.Exit(0)
+
 	if err != nil {
 		log.Fatal("Yo", err)
 	}
@@ -41,7 +54,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Yo2", err)
 	}
-	device, err := conn.GetDeviceByName(dev)
+	device, err = conn.GetDeviceByName(dev)
 	if err == nil {
 		if err = adapter.RemoveDevice(device); err != nil {
 			log.Fatal("Yo10", err)
