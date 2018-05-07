@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/ecc1/ble"
-	"github.com/efidoman/xdripgo/messages"
+//	"github.com/efidoman/xdripgo/messages"
 	"log"
-	"os"
+//	"os"
 )
 
 func authenticate() {
@@ -35,43 +35,59 @@ func main() {
 	dev := "DexcomFE"
 	conn, err := ble.Open()
 
+/*
 	uuids := make([]string, 2)
 
 	uuids[0] = "febc"
 	uuids[1] = "f8083532-849e-531c-c594-30f1f86a4ea5"
 	device, err := conn.Discover(0, uuids...)
+*/
+
+/*
+	uuids := make([]string, 1)
+	uuids[0] = ""
+	device, err := conn.Discover(0, uuids...)
+*/
+/*
 	if err != nil {
 		log.Fatal(err)
 	}
 	device.Print(os.Stdout)
 
 	os.Exit(0)
+*/
+
 
 	if err != nil {
 		log.Fatal("Yo", err)
 	}
+/*
 	adapter, err := conn.GetAdapter()
 	if err != nil {
 		log.Fatal("Yo2", err)
 	}
+*/
+		//if err = adapter.RemoveDevice(device); err != nil {
+/*
 	device, err = conn.GetDeviceByName(dev)
-	if err == nil {
-		if err = adapter.RemoveDevice(device); err != nil {
+	if err != nil {
 			log.Fatal("Yo10", err)
 		}
 	}
-	uuid := "f8083532-849e-531c-c594-30f1f86a4ea5"
+*/
+//	uuid := "f8083532-849e-531c-c594-30f1f86a4ea5"
 
-	message := messages.NewAuthRequestTxMessage()
+//	message := messages.NewAuthRequestTxMessage()
 
-	log.Print(message)
-	log.Print(uuid)
+//	log.Print(message)
+//	log.Print(uuid)
 
-	device, err = conn.GetDeviceByName(dev)
+	device, err := conn.GetDeviceByName(dev)
 	if err != nil {
 		log.Fatal("Yo4", err)
 	}
-	device.Print(os.Stdout)
+        log.Print(device)
+//	device.Print(os.Stdout)
 
 	/*
 		if !device.Connected() {
@@ -90,6 +106,7 @@ func main() {
 			log.Fatal(err)
 		}
 	*/
+/*
 	tx, err := conn.GetCharacteristic(uuid)
 	if err != nil {
 		log.Print("Yo6", err)
@@ -98,6 +115,7 @@ func main() {
 		//return nil, err
 	}
 	log.Print(tx)
+*/
 	/*
 	           err := conn.tx.WriteValue(message.data)
 	   		if err != nil {
