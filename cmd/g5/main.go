@@ -10,10 +10,42 @@ import (
 func authenticate() {
 }
 
+/*
+func findDevice(conn *ble.Connection) (ble.Device, error) {
+	device, err := conn.GetDeviceByName("DexcomFE")
+	if err == nil && device.Connected() {
+		return device, nil
+	}
+	// Remove device to avoid "Software caused connection abort" error.
+	device, err = conn.GetDeviceByName("DexcomFE")
+	if err == nil {
+		adapter, err := conn.GetAdapter()
+		if err != nil {
+			return nil, err
+		}
+		if err = adapter.RemoveDevice(device); err != nil {
+			return nil, err
+		}
+	}
+	return conn.Discover(10*time.Second, receiverService)
+}
+*/
+
 func main() {
+	dev := "DexcomFE"
 	conn, err := ble.Open()
 	if err != nil {
 		log.Fatal("Yo", err)
+	}
+	adapter, err := conn.GetAdapter()
+	if err != nil {
+		log.Fatal("Yo2", err)
+	}
+	device, err := conn.GetDeviceByName(dev)
+	if err == nil {
+		if err = adapter.RemoveDevice(device); err != nil {
+			log.Fatal("Yo10", err)
+		}
 	}
 	uuid := "f8083532-849e-531c-c594-30f1f86a4ea5"
 
@@ -22,23 +54,32 @@ func main() {
 	log.Print(message)
 	log.Print(uuid)
 
-	device, err := conn.GetDeviceByName("DexcomFE")
+	device, err = conn.GetDeviceByName(dev)
 	if err != nil {
-		log.Fatal("Yo2", err)
+		log.Fatal("Yo4", err)
 	}
 	device.Print(os.Stdout)
 
-	if !device.Connected() {
+	/*
+		if !device.Connected() {
+			err = device.Connect()
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Printf("%s: already connected", device.Name())
+		}
+	*/
+	/*
 		err = device.Connect()
 		if err != nil {
+		        log.Print("Yo5")
 			log.Fatal(err)
 		}
-	} else {
-		log.Printf("%s: already connected", device.Name())
-	}
+	*/
 	tx, err := conn.GetCharacteristic(uuid)
 	if err != nil {
-		log.Fatal("Yo2", err)
+		log.Print("Yo6", err)
 
 		//		conn.Close()
 		//return nil, err
