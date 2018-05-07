@@ -47,7 +47,8 @@ func main() {
 			log.Fatal("Yo10", err)
 		}
 	}
-	uuid := "f8083532-849e-531c-c594-30f1f86a4ea5"
+	uuid := "f8083535-849e-531c-c594-30f1f86a4ea5"
+	// F8083535-849E-531C-C594-30F1F86A4EA5
 
 	message := messages.NewAuthRequestTxMessage()
 
@@ -85,12 +86,10 @@ func main() {
 		//return nil, err
 	}
 	log.Print(tx)
-	/*
-	           err := conn.tx.WriteValue(message.data)
-	   		if err != nil {
-	   			return err
-	   		}
-	*/
+	err = tx.WriteValue(message.Data)
+	if err != nil {
+		log.Print("Yo7", err)
+	}
 	//        device.Connect() - not sure if I need to connect or not
 
 }
