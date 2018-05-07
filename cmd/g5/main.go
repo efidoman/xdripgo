@@ -1,133 +1,115 @@
-//shows how to watch for new devices and list them
 package main
 
 import (
-	"os"
-
-	log "github.com/Sirupsen/logrus"
+	"github.com/ecc1/ble"
 	"github.com/efidoman/xdripgo/messages"
-	"github.com/muka/go-bluetooth/api"
-	"github.com/muka/go-bluetooth/emitter"
-	"time"
+	"log"
+	"os"
 )
 
-const logLevel = log.DebugLevel
-const adapterID = "hci0"
+func authenticate() {
+}
+
+/*
+func findDevice(conn *ble.Connection) (ble.Device, error) {
+	device, err := conn.GetDeviceByName("DexcomFE")
+	if err == nil && device.Connected() {
+		return device, nil
+	}
+	// Remove device to avoid "Software caused connection abort" error.
+	device, err = conn.GetDeviceByName("DexcomFE")
+	if err == nil {
+		adapter, err := conn.GetAdapter()
+		if err != nil {
+			return nil, err
+		}
+		if err = adapter.RemoveDevice(device); err != nil {
+			return nil, err
+		}
+	}
+	return conn.Discover(10*time.Second, receiverService)
+}
+*/
 
 func main() {
-
-	log.SetLevel(logLevel)
-
-	//clean up connection on exit
-	defer api.Exit()
-
-	log.Debugf("Reset bluetooth device")
-	/*a := linux.NewBtMgmt(adapterID)
-	err := a.Reset()
+	dev := "DexcomFE"
+	conn, err := ble.Open()
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		log.Fatal("Yo", err)
 	}
-	*/
-
-	devices, err := api.GetDevices()
+	adapter, err := conn.GetAdapter()
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		log.Fatal("Yo2", err)
 	}
-
-	log.Infof("Cached devices:")
-	for _, dev := range devices {
-		showDeviceInfo(&dev)
+	device, err := conn.GetDeviceByName(dev)
+	if err == nil {
+		if err = adapter.RemoveDevice(device); err != nil {
+			log.Fatal("Yo10", err)
+		}
 	}
+	uuid := "f8083532-849e-531c-c594-30f1f86a4ea5"
 
-	log.Infof("Discovered devices:")
-	err = discoverDevices(adapterID)
+	message := messages.NewAuthRequestTxMessage()
+
+	log.Print(message)
+	log.Print(uuid)
+
+	device, err = conn.GetDeviceByName(dev)
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		log.Fatal("Yo4", err)
 	}
+	device.Print(os.Stdout)
 
-	select {}
-}
-
-func discoverDevices(adapterID string) error {
-
-	err := api.StartDiscovery()
-	if err != nil {
-		return err
-	}
-
-	log.Debugf("Started discovery")
-	err = api.On("discovery", emitter.NewCallback(func(ev emitter.Event) {
-		discoveryEvent := ev.GetData().(api.DiscoveredDeviceEvent)
-		dev := discoveryEvent.Device
-		showDeviceInfo(dev)
-	}))
-
-	return err
-}
-
-func showDeviceInfo(dev *api.Device) {
-	if dev == nil {
-		return
-	}
-	props, err := dev.GetProperties()
-	if err != nil {
-		log.Errorf("%s: Failed to get properties: %s", dev.Path, err.Error())
-		return
-	}
-	if props.Name == "DexcomFE" {
-		erro := dev.Connect()
-		if erro != nil {
-			log.Print("connected!")
-			sum := 1
-			log.Print(props)
-			for sum < 1000 {
-				/*
-					l, _ := dev.GetCharsList()
-					log.Print("--------dev.GetCharsList")
-					log.Print(l)
-				*/
-
-				s, _ := dev.GetAllServicesAndUUID()
-				log.Print("--------dev.GetAllServicesAndUUID")
-
-				log.Print(s)
-				/*
-					for key := range s {
-						log.Print(key)
-					}
-				*/
-				//F8083535-849E-531C-C594-30F1F86A4EA5
-				auth, err := dev.GetCharByUUID("F8083535-849E-531C-C594-30F1F86A4EA5")
-				if err != nil {
-					log.Print("failed to get charateristic for auth uuid")
-				} else {
-					log.Print("WORKED!!! --------dev.GetCharByUUID(F8083535-849E-531C-C594-30F1F86A4EA5)")
-					log.Print(auth)
-					message := messages.NewAuthRequestTxMessage()
-					log.Print(message)
-
-					os.Exit(0)
-				}
-				/*
-					c, f := dev.GetCharByUUID("F8083532-849E-531C-C594-30F1F86A4EA5")
-					log.Print("--------dev.GetCharByUUID(f8083532-849e-531c-c594-30f1f86a4ea5)")
-					log.Print(c)
-					log.Print(f)
-					d, e := dev.GetCharByUUID("0000FEBC-0000-1000-8000-00805F9B34FB")
-					log.Print("--------dev.GetCharByUUID(0000febc-0000-1000-8000-00805f9b34fb)")
-					log.Print(d)
-					log.Print(e)
-				*/
-				time.Sleep(5 * time.Second)
-				sum += 1
+	/*
+		if !device.Connected() {
+			err = device.Connect()
+			if err != nil {
+				log.Fatal(err)
 			}
 		} else {
-			log.Print("connect failed")
+			log.Printf("%s: already connected", device.Name())
 		}
+	*/
+	/*
+		err = device.Connect()
+		if err != nil {
+		        log.Print("Yo5")
+			log.Fatal(err)
+		}
+	*/
+	tx, err := conn.GetCharacteristic(uuid)
+	if err != nil {
+		log.Print("Yo6", err)
 
+		//		conn.Close()
+		//return nil, err
 	}
-	//	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
+	log.Print(tx)
+	/*
+	           err := conn.tx.WriteValue(message.data)
+	   		if err != nil {
+	   			return err
+	   		}
+	*/
+	//        device.Connect() - not sure if I need to connect or not
+
 }
+
+/*************
+./device DexcomFE
+/org/bluez/hci0/dev_FF_5C_14_C0_E2_65 [org.bluez.Device1]
+    ManufacturerData @a{qv} {208: <@ay [0xa3, 0x3]>}
+    AddressType "random"
+    Alias "DexcomFE"
+    LegacyPairing false
+    ServicesResolved false
+    Blocked false
+    Trusted false
+    RSSI @n -52
+    Adapter @o "/org/bluez/hci0"
+    UUIDs ["0000febc-0000-1000-8000-00805f9b34fb"]
+    Connected false
+    Address "FF:5C:14:C0:E2:65"
+    Name "DexcomFE"
+    Paired true
+******************/
