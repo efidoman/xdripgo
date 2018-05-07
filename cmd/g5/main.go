@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/ecc1/ble"
+	"github.com/efidoman/xdripgo/messages"
 	"log"
 	"os"
-        "github.com/efidoman/xdripgo/messages"
 )
 
 func authenticate() {
@@ -17,31 +17,40 @@ func main() {
 	}
 	uuid := "f8083532-849e-531c-c594-30f1f86a4ea5"
 
-        message := messages.NewAuthRequestTxMessage()
+	message := messages.NewAuthRequestTxMessage()
 
-        log.Print(message)
-        log.Print(uuid)
+	log.Print(message)
+	log.Print(uuid)
 
 	device, err := conn.GetDeviceByName("DexcomFE")
 	if err != nil {
 		log.Fatal("Yo2", err)
 	}
 	device.Print(os.Stdout)
-        tx, err := conn.GetCharacteristic(uuid)
+
+	if !device.Connected() {
+		err = device.Connect()
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Printf("%s: already connected", device.Name())
+	}
+	tx, err := conn.GetCharacteristic(uuid)
 	if err != nil {
 		log.Fatal("Yo2", err)
-        
-//		conn.Close()
+
+		//		conn.Close()
 		//return nil, err
 	}
-        log.Print(tx)
-/*
-        err := conn.tx.WriteValue(message.data)
-		if err != nil {
-			return err
-		}
-*/
-//        device.Connect() - not sure if I need to connect or not
+	log.Print(tx)
+	/*
+	           err := conn.tx.WriteValue(message.data)
+	   		if err != nil {
+	   			return err
+	   		}
+	*/
+	//        device.Connect() - not sure if I need to connect or not
 
 }
 
