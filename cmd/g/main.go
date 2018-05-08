@@ -5,6 +5,8 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/efidoman/xdripgo/messages"
+	"github.com/godbus/dbus"
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/emitter"
 	"time"
@@ -80,7 +82,19 @@ func showDeviceInfo(dev *api.Device) {
 	if props.Name == "DexcomFE" {
 		erro := dev.Connect()
 		if erro != nil {
+
 			log.Print("connected!")
+			_ = dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
+
+				charEvent := ev.GetData().(api.GattCharacteristicEvent)
+				charProps := charEvent.Properties
+				log.Debugf("Found char %s (%s : %s)", charProps.UUID, charEvent.Path)
+				log.Debugf("charEvent= %v", charEvent)
+				log.Debugf("ev= %v", ev)
+				log.Debugf("charProps= %v", charProps)
+			}))
+			return
+
 			sum := 1
 			log.Print(props)
 			for sum < 1000 {
@@ -105,8 +119,22 @@ func showDeviceInfo(dev *api.Device) {
 					log.Print("failed to get charateristic for auth uuid")
 				} else {
 					log.Print("WORKED!!! --------dev.GetCharByUUID(F8083535-849E-531C-C594-30F1F86A4EA5)")
-					os.Exit(0)
 					log.Print(auth)
+					message := messages.NewAuthRequestTxMessage()
+
+					log.Print(message)
+					_ = dev.Connect()
+					//auth.Enable()
+					options := make(map[string]dbus.Variant)
+					err = auth.WriteValue(message.Data, options)
+					if err != nil {
+						log.Print("failed to write auth tx", err)
+
+					} else {
+						log.Print("wrote auth tx")
+					}
+
+					os.Exit(0)
 				}
 				/*
 					c, f := dev.GetCharByUUID("F8083532-849E-531C-C594-30F1F86A4EA5")
