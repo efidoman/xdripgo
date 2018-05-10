@@ -1,4 +1,3 @@
-//shows how to watch for new devices and list them
 package main
 
 import (
@@ -7,11 +6,50 @@ import (
 	log "github.com/Sirupsen/logrus"
 	//"github.com/efidoman/xdripgo/messages"
 	//"github.com/godbus/dbus"
+	"fmt"
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/emitter"
+	"strings"
 	"time"
 	//	"github.com/muka/go-bluetooth/linux"
 )
+
+var (
+	// Services
+	DeviceInfo    = 0x180a
+	Advertisement = 0xfebc
+	CGMService    = 0x3532
+	ServiceB      = 0x4532
+
+	// Characteristics
+	Communication  = g5UUID(0x3533)
+	Control        = g5UUID(0x3534)
+	Authentication = g5UUID(0x3535)
+	Backfill       = g5UUID(0x3536)
+)
+
+func g5UUID(id uint16) string {
+	return fmt.Sprintf("f808%04x-849e-531c-c594-30f1f86a4ea5", id)
+}
+
+/*******
+// TODO: it might be simple to rewrite the string literals here in lower case
+// and without hyphens, but they are a bit easier to read this way
+const TransmitterService = {
+  DeviceInfo: toLowerCaseAndRemoveHyphens('180A'),
+  Advertisement: toLowerCaseAndRemoveHyphens('FEBC'),
+  CGMService: toLowerCaseAndRemoveHyphens('F8083532-849E-531C-C594-30F1F86A4EA5'),
+  ServiceB: toLowerCaseAndRemoveHyphens('F8084532-849E-531C-C594-30F1F86A4EA5')
+};
+
+const CGMServiceCharacteristic = {
+  Communication: toLowerCaseAndRemoveHyphens('F8083533-849E-531C-C594-30F1F86A4EA5'),
+  Control: toLowerCaseAndRemoveHyphens('F8083534-849E-531C-C594-30F1F86A4EA5'),
+  Authentication: toLowerCaseAndRemoveHyphens('F8083535-849E-531C-C594-30F1F86A4EA5'),
+  Backfill: toLowerCaseAndRemoveHyphens('F8083536-849E-531C-C594-30F1F86A4EA5')
+};
+
+*****/
 
 const logLevel = log.DebugLevel
 const adapterID = "hci0"
@@ -84,17 +122,19 @@ func showDeviceInfo(dev *api.Device) {
 		if erro != nil {
 
 			log.Print("connected!")
-			/* emit on changed did not work ;-<
-			_ = dev.On("changed", emitter.NewCallback(func(ev emitter.Event) {
+			log.Print(props)
+			/*
+				// emit on changed did not work ;-<
+				_ = dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 
-				charEvent := ev.GetData().(api.GattCharacteristicEvent)
-				charProps := charEvent.Properties
-				log.Debugf("Found char %s (%s : %s)", charProps.UUID, charEvent.Path)
-				log.Debugf("charEvent= %v", charEvent)
-				log.Debugf("ev= %v", ev)
-				log.Debugf("charProps= %v", charProps)
-			}))
-			return
+					charEvent := ev.GetData().(api.GattCharacteristicEvent)
+					charProps := charEvent.Properties
+					log.Debugf("Found char %s (%s : %s)", charProps.UUID, charEvent.Path)
+					log.Debugf("charEvent= %v", charEvent)
+					log.Debugf("ev= %v", ev)
+					log.Debugf("charProps= %v", charProps)
+				}))
+				return
 			*/
 
 			sum := 1
@@ -118,21 +158,23 @@ func showDeviceInfo(dev *api.Device) {
 					}
 				*/
 				//F8083535-849E-531C-C594-30F1F86A4EA5
-				auth, err := dev.GetCharByUUID("F8083535-849E-531C-C594-30F1F86A4EA5")
-				log.Print("auth.Properties= ", auth.Properties)
+				//f8083532-849e-531c-c594-30f1f86a4ea5
+				auth, err := dev.GetCharByUUID("F8083532-849E-531C-C594-30F1F86A4EA5")
 				if err != nil {
 					log.Print("failed to get charateristic for auth uuid")
 				} else {
 					log.Print("WORKED!!! --------dev.GetCharByUUID(F8083535-849E-531C-C594-30F1F86A4EA5)")
 					log.Print(auth)
-					log.Print("")
+					os.Exit(0)
 
-					gProp := auth.Properties
-					gPath := auth.Path
+					//					log.Print("")
 
-					log.Print("path=", gPath)
-					log.Print("notifying=", gProp.Notifying)
-					log.Print("service=", gProp.Service)
+					//					gProp := auth.Properties
+					//					gPath := auth.Path
+
+					//					log.Print("path=", gPath)
+					//					log.Print("notifying=", gProp.Notifying)
+					//					log.Print("service=", gProp.Service)
 
 					/* save for when I figure out 5 minute prop change
 					   					message := messages.NewAuthRequestTxMessage()
@@ -172,4 +214,36 @@ func showDeviceInfo(dev *api.Device) {
 
 	}
 	//	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
+}
+
+func hexMatch(s, pattern string) bool {
+	const hexDigits = "0123456789abcdef"
+	if len(s) != len(pattern) {
+		return false
+	}
+	for i := range s {
+		switch pattern[i] {
+		case 'x':
+			if strings.IndexByte(hexDigits, s[i]) == -1 {
+				return false
+			}
+		default:
+			if s[i] != pattern[i] {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// ValidUUID checks whether a string is a valid UUID.
+func ValidUUID(u string) bool {
+	switch len(u) {
+	case 4:
+		return hexMatch(u, "xxxx")
+	case 36:
+		return hexMatch(u, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+	default:
+		return false
+	}
 }
