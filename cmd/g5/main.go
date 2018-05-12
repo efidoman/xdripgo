@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/ecc1/ble"
+	"github.com/efidoman/ble"
 	"github.com/efidoman/xdripgo/messages"
 	"log"
 	"os"
+	"time"
 )
 
 var (
@@ -56,7 +57,7 @@ func main() {
 
 		uuids := make([]string, 1)
 		uuids[0] = "0000febc-0000-1000-8000-00805f9b34fb"
-		device, err = conn.Discover(0, uuids...)
+		device, err = conn.DiscoverByName(0, "DexcomFE")
 		if err != nil {
 			log.Fatal("no device after discover ", err)
 		}
@@ -81,7 +82,9 @@ func main() {
 		// in this case let's loop about 6 minutes trying to find CGM service
 		i := 0
 		for i < 120 {
-			i += i
+			i += 1
+			time.Sleep(5 * time.Second)
+
 			tx, err = conn.GetCharacteristic(uuid)
 			if err == nil {
 				log.Print("got cgm service!!!!")
