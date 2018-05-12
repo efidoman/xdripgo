@@ -62,6 +62,9 @@ func main() {
 		}
 		log.Print("device FOUND ", device)
 		device.Print(os.Stdout)
+		if !device.Connected() {
+			device.Connect()
+		}
 	}
 
 	uuid := CGMService
@@ -75,11 +78,22 @@ func main() {
 
 	tx, err := conn.GetCharacteristic(uuid)
 	if err != nil {
-		log.Fatal("Failed to get cgm service   ", err)
+		// in this case let's loop about 6 minutes trying to find CGM service
+		i := 0
+		for i < 120 {
+			i += i
+			tx, err = conn.GetCharacteristic(uuid)
+			if err == nil {
+				log.Print("got cgm service!!!!")
+				log.Print(tx)
+				i = 122 // out of loop, got it
+			} else {
+				log.Print("Trying to get CGM char   ", err)
+			}
+
+		}
 
 	}
-	log.Print("got cgm service!!!!")
-	log.Print(tx)
 	err = tx.WriteValue(message.Data)
 	if err != nil {
 		log.Print("failed to write authentication characteristic", err)
