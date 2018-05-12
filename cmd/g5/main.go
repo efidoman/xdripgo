@@ -5,13 +5,13 @@ import (
 	"github.com/ecc1/ble"
 	"github.com/efidoman/xdripgo/messages"
 	"log"
-	//	"os"
+	"os"
 )
 
 var (
 	// Services
-	DeviceInfo    = 0x180a
-	Advertisement = 0xfebc
+	DeviceInfo    = "180a"
+	Advertisement = "febc"
 	CGMService    = g5UUID(0x3532)
 	ServiceB      = g5UUID(0x4532)
 
@@ -49,7 +49,19 @@ func main() {
 	}
 	device, err = conn.GetDeviceByName(dev)
 	if err != nil {
-		log.Fatal("failed to connect to device = ", dev)
+		// discover in this case
+		//		uuids := make([]string, 2)
+		//		uuids[0] = Advertisement
+		//		uuids[1] = CGMService
+
+		uuids := make([]string, 1)
+		uuids[0] = "0000febc-0000-1000-8000-00805f9b34fb"
+		device, err = conn.Discover(0, uuids...)
+		if err != nil {
+			log.Fatal("no device after discover ", err)
+		}
+		log.Print("device FOUND ", device)
+		device.Print(os.Stdout)
 	}
 
 	uuid := CGMService
