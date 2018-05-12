@@ -5,7 +5,7 @@ import (
 	"github.com/ecc1/ble"
 	"github.com/efidoman/xdripgo/messages"
 	"log"
-	"os"
+	//	"os"
 )
 
 var (
@@ -29,27 +29,6 @@ func g5UUID(id uint16) string {
 func authenticate() {
 }
 
-/*
-func findDevice(conn *ble.Connection) (ble.Device, error) {
-	device, err := conn.GetDeviceByName("DexcomFE")
-	if err == nil && device.Connected() {
-		return device, nil
-	}
-	// Remove device to avoid "Software caused connection abort" error.
-	device, err = conn.GetDeviceByName("DexcomFE")
-	if err == nil {
-		adapter, err := conn.GetAdapter()
-		if err != nil {
-			return nil, err
-		}
-		if err = adapter.RemoveDevice(device); err != nil {
-			return nil, err
-		}
-	}
-	return conn.Discover(10*time.Second, receiverService)
-}
-*/
-
 func main() {
 	dev := "DexcomFE"
 	conn, err := ble.Open()
@@ -68,25 +47,26 @@ func main() {
 			log.Fatal("failed to connect to device = ", dev, "  ", err)
 		}
 	}
-	log.Print("connected to device = ", dev)
+	device, err = conn.GetDeviceByName(dev)
+	if err != nil {
+		log.Fatal("failed to connect to device = ", dev)
+	}
 
-	uuid := Authentication
+	uuid := CGMService
 	log.Print("uuid = ", uuid)
-	// F8083535-849E-531C-C594-30F1F86A4EA5
 
 	message := messages.NewAuthRequestTxMessage()
 
-	log.Print(message)
-	log.Print(uuid)
+	log.Print("message = ", message)
 
-	device.Print(os.Stdout)
+	log.Print("device = ", device)
 
 	tx, err := conn.GetCharacteristic(uuid)
 	if err != nil {
-		log.Fatal("Failed to get authentication characteristic   ", err)
+		log.Fatal("Failed to get cgm service   ", err)
 
 	}
-	log.Print("got authentication characteristic!!!!")
+	log.Print("got cgm service!!!!")
 	log.Print(tx)
 	err = tx.WriteValue(message.Data)
 	if err != nil {
