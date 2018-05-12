@@ -1,11 +1,30 @@
 package main
 
 import (
+	"fmt"
 	"github.com/ecc1/ble"
 	"github.com/efidoman/xdripgo/messages"
 	"log"
 	"os"
 )
+
+var (
+	// Services
+	DeviceInfo    = 0x180a
+	Advertisement = 0xfebc
+	CGMService    = g5UUID(0x3532)
+	ServiceB      = g5UUID(0x4532)
+
+	// Characteristics
+	Communication  = g5UUID(0x3533)
+	Control        = g5UUID(0x3534)
+	Authentication = g5UUID(0x3535)
+	Backfill       = g5UUID(0x3536)
+)
+
+func g5UUID(id uint16) string {
+	return fmt.Sprintf("f808%04x-849e-531c-c594-30f1f86a4ea5", id)
+}
 
 func authenticate() {
 }
@@ -35,19 +54,24 @@ func main() {
 	dev := "DexcomFE"
 	conn, err := ble.Open()
 	if err != nil {
-		log.Fatal("Yo", err)
+		log.Fatal("failed ble open", err)
 	}
+	log.Print("opened BLE")
 	adapter, err := conn.GetAdapter()
 	if err != nil {
-		log.Fatal("Yo2", err)
+		log.Fatal("failed adapter connect", err)
 	}
+	log.Print("connected to adapter")
 	device, err := conn.GetDeviceByName(dev)
 	if err == nil {
 		if err = adapter.RemoveDevice(device); err != nil {
-			log.Fatal("Yo10", err)
+			log.Fatal("failed to connect to device = ", dev, "  ", err)
 		}
 	}
-	uuid := "f8083535-849e-531c-c594-30f1f86a4ea5"
+	log.Print("connected to device = ", dev)
+
+	uuid := Authentication
+	log.Print("uuid = ", uuid)
 	// F8083535-849E-531C-C594-30F1F86A4EA5
 
 	message := messages.NewAuthRequestTxMessage()
@@ -55,43 +79,19 @@ func main() {
 	log.Print(message)
 	log.Print(uuid)
 
-	device, err = conn.GetDeviceByName(dev)
-	if err != nil {
-		log.Fatal("Yo4", err)
-	}
 	device.Print(os.Stdout)
 
-	/*
-		if !device.Connected() {
-			err = device.Connect()
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			log.Printf("%s: already connected", device.Name())
-		}
-	*/
-	/*
-		err = device.Connect()
-		if err != nil {
-		        log.Print("Yo5")
-			log.Fatal(err)
-		}
-	*/
 	tx, err := conn.GetCharacteristic(uuid)
 	if err != nil {
-		log.Print("Yo6", err)
+		log.Fatal("Failed to get authentication characteristic   ", err)
 
-		//		conn.Close()
-		//return nil, err
 	}
+	log.Print("got authentication characteristic!!!!")
 	log.Print(tx)
 	err = tx.WriteValue(message.Data)
 	if err != nil {
-		log.Print("Yo7", err)
+		log.Print("failed to write authentication characteristic", err)
 	}
-	//        device.Connect() - not sure if I need to connect or not
-
 }
 
 /*************
