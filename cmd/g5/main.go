@@ -37,18 +37,20 @@ func main() {
 		log.Fatal("failed ble open", err)
 	}
 	log.Print("opened BLE")
-	adapter, err := conn.GetAdapter()
-	if err != nil {
-		log.Fatal("failed adapter connect", err)
-	}
-	log.Print("connected to adapter")
-	device, err := conn.GetDeviceByName(dev)
-	if err == nil {
-		if err = adapter.RemoveDevice(device); err != nil {
-			log.Fatal("failed to connect to device = ", dev, "  ", err)
+	/*
+		adapter, err := conn.GetAdapter()
+		if err != nil {
+			log.Fatal("failed adapter connect", err)
 		}
-	}
-	device, err = conn.GetDeviceByName(dev)
+		log.Print("connected to adapter")
+		device, err := conn.GetDeviceByName(dev)
+		if err == nil {
+			if err = adapter.RemoveDevice(device); err != nil {
+				log.Fatal("failed to remove the device = ", dev, "  ", err)
+			}
+		}
+	*/
+	device, err := conn.GetDeviceByName(dev)
 	if err != nil {
 		// discover in this case
 		//		uuids := make([]string, 2)
@@ -56,16 +58,43 @@ func main() {
 		//		uuids[1] = CGMService
 
 		uuids := make([]string, 1)
-		uuids[0] = "0000febc-0000-1000-8000-00805f9b34fb"
-		device, err = conn.DiscoverByName(0, "DexcomFE")
+		//		uuids[0] = "0000febc-0000-1000-8000-00805f9b34fb"
+		uuids[0] = "DexcomFE"
+		device, err = conn.Discover(0, "DexcomFE") //uuids)
 		if err != nil {
 			log.Fatal("no device after discover ", err)
 		}
 		log.Print("device FOUND ", device)
 		device.Print(os.Stdout)
 		if !device.Connected() {
+			log.Print("connecting")
 			device.Connect()
 		}
+		device.Print(os.Stdout)
+		if !device.Paired() {
+			err = device.Pair()
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Printf("%s: already paired", device.Name())
+		}
+
+	}
+	log.Print("device FOUND ", device)
+	device.Print(os.Stdout)
+	if !device.Connected() {
+		log.Print("connecting")
+		device.Connect()
+	}
+	device.Print(os.Stdout)
+	if !device.Paired() {
+		err = device.Pair()
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Printf("%s: already paired", device.Name())
 	}
 
 	uuid := CGMService
@@ -84,6 +113,7 @@ func main() {
 		for i < 120 {
 			i += 1
 			time.Sleep(5 * time.Second)
+			log.Print("trying for ", 5*i, " seconds")
 
 			tx, err = conn.GetCharacteristic(uuid)
 			if err == nil {
