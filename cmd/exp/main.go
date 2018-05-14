@@ -78,9 +78,31 @@ func main() {
 	<-done
 }
 
+var (
+	// Services
+	DeviceInfo    = "180a"
+	Advertisement = "febc"
+	CGMService    = g5UUID(0x3532)
+	ServiceB      = g5UUID(0x4532)
+
+	// Characteristics
+	Communication  = g5UUID(0x3533)
+	Control        = g5UUID(0x3534)
+	Authentication = g5UUID(0x3535)
+	Backfill       = g5UUID(0x3536)
+)
+
+func g5UUID(id uint16) string {
+	return fmt.Sprintf("f808%04x849e531cc59430f1f86a4ea5", id)
+}
+
 func explore(cln ble.Client, p *ble.Profile) error {
 	for _, s := range p.Services {
 		fmt.Printf("    Service: %s %s, Handle (0x%02X)\n", s.UUID, ble.Name(s.UUID), s.Handle)
+		
+		if s.UUID = CGMService {
+			fmt.Print("      **************** FOUND CGM Service!!!!!!")
+		}
 
 		for _, c := range s.Characteristics {
 			fmt.Printf("      Characteristic: %s %s, Property: 0x%02X (%s), Handle(0x%02X), VHandle(0x%02X)\n",
