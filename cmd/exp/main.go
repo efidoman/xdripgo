@@ -99,8 +99,8 @@ func g5UUID(id uint16) string {
 func explore(cln ble.Client, p *ble.Profile) error {
 	for _, s := range p.Services {
 		fmt.Printf("    Service: %s %s, Handle (0x%02X)\n", s.UUID, ble.Name(s.UUID), s.Handle)
-		
-		if s.UUID = CGMService {
+
+		if string(s.UUID) == CGMService {
 			fmt.Print("      **************** FOUND CGM Service!!!!!!")
 		}
 
