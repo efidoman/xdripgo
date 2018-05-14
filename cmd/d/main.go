@@ -38,12 +38,18 @@ func main() {
 
 	device.Print(os.Stdout)
 
+	rx := make(chan byte, 1600)
+	log.Print("++++++++++++++++++++++++++++ Calling Handle Notify ++++++++++++++++++++++++++")
+	err = conn.HandleNotify("f8083532-849e-531c-c594-30f1f86a4ea5", func(data []byte) {
+		log.Print("++++++++++++++++++++++++++++ IN HANDLE NOTIFY ++++++++++++++++++++++++++")
+		for _, b := range data {
+			rx <- b
+		}
+		log.Print("+++++ IN HANDLE NOTIFY - data=", data)
+		device.Print(os.Stdout)
+	})
+	log.Print("++++++++++++++++++++++++++++ AFTER HANDLE NOTIFY ++++++++++++++++++++++++++")
 	//service, err := conn.GetService("febc f8083532-849e-531c-c594-30f1f86a4ea5")
-	device, err = conn.Discover(0, "f8083532-849e-531c-c594-30f1f86a4ea5")
-	if err != nil {
-		log.Print("could not connect to service")
-	} else {
-		log.Print("service found!!!!")
-	}
-	device.Print(os.Stdout)
+	//device, err = conn.Discover(0, "f8083532-849e-531c-c594-30f1f86a4ea5")
+	//device, err = conn.Discover(0, "f8083532-849e-531c-c594-30f1f86a4ea5")
 }
