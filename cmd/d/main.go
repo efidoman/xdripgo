@@ -38,17 +38,23 @@ func main() {
 
 	device.Print(os.Stdout)
 
-	rx := make(chan byte, 1600)
-	log.Print("++++++++++++++++++++++++++++ Calling Handle Notify ++++++++++++++++++++++++++")
+	log.Print("++++++++++++++++++++++++++++ Calling Handle Notify 3532 ++++++++++++++++++++++++++")
 	err = conn.HandleNotify("f8083532-849e-531c-c594-30f1f86a4ea5", func(data []byte) {
-		log.Print("++++++++++++++++++++++++++++ IN HANDLE NOTIFY ++++++++++++++++++++++++++")
-		for _, b := range data {
-			rx <- b
-		}
-		log.Print("+++++ IN HANDLE NOTIFY - data=", data)
+		log.Print("++++++++++++++++++++++++++++ IN HANDLE NOTIFY 3532 ++++++++++++++++++++++++++")
+		log.Print("+++++ IN HANDLE NOTIFY 3532 - data=", data)
 		device.Print(os.Stdout)
 	})
-	log.Print("++++++++++++++++++++++++++++ AFTER HANDLE NOTIFY ++++++++++++++++++++++++++")
+	log.Print("++++++++++++++++++++++++++++ AFTER HANDLE NOTIFY 3532 ++++++++++++++++++++++++++")
+
+	log.Print("++++++++++++++++++++++++++++ Calling Handle Notify febc ++++++++++++++++++++++++++")
+	err = conn.HandleNotify("0000febc-0000-1000-8000-00805f9b34fb", func(data []byte) {
+		log.Print("++++++++++++++++++++++++++++ IN HANDLE NOTIFY febc ++++++++++++++++++++++++++")
+		log.Print("+++++ IN HANDLE NOTIFY febc - data=", data)
+		device.Print(os.Stdout)
+	})
+	log.Print("++++++++++++++++++++++++++++ AFTER HANDLE NOTIFY febc ++++++++++++++++++++++++++")
+
+	select {}
 	//service, err := conn.GetService("febc f8083532-849e-531c-c594-30f1f86a4ea5")
 	//device, err = conn.Discover(0, "f8083532-849e-531c-c594-30f1f86a4ea5")
 	//device, err = conn.Discover(0, "f8083532-849e-531c-c594-30f1f86a4ea5")
