@@ -1,0 +1,4 @@
+go fmt
+git add main.go save *.txt
+git commit -m "testing g5 tx connection"
+git push origin master

@@ -1,0 +1,59 @@
+rpi0 06:20:17 root@fido0:~/go/src/github.com/efidoman/ble1/examples/basic/explorer go buidl
+go: unknown subcommand "buidl"
+Run 'go help' for usage.
+rpi0 06:20:21 root@fido0:~/go/src/github.com/efidoman/ble1/examples/basic/explorer go build
+# github.com/efidoman/ble1/examples/basic/explorer
+./main.go:32:22: cannot use d (type "github.com/currantlabs/ble".Device) as type "github.com/efidoman/ble1".Device in argument to "github.com/efidoman/ble1".SetDefaultDevice:
+	"github.com/currantlabs/ble".Device does not implement "github.com/efidoman/ble1".Device (wrong type for AddService method)
+		have AddService(*"github.com/currantlabs/ble".Service) error
+		want AddService(*"github.com/efidoman/ble1".Service) error
+rpi0 06:20:46 root@fido0:~/go/src/github.com/efidoman/ble1/examples/basic/explorer !vi
+vi main.go
+rpi0 06:21:34 root@fido0:~/go/src/github.com/efidoman/ble1/examples/basic/explorer go build
+rpi0 06:22:09 root@fido0:~/go/src/github.com/efidoman/ble1/examples/basic/explorer ./explorer
+Scanning for 5s...
+2018/05/14 06:22:22 can't connect : can't scan: context deadline exceeded
+rpi0 06:22:24 root@fido0:~/go/src/github.com/efidoman/ble1/examples/basic/explorer vi main.go
+rpi0 06:23:09 root@fido0:~/go/src/github.com/efidoman/ble1/examples/basic/explorer go build
+./explorer
+rpi0 06:23:44 root@fido0:~/go/src/github.com/efidoman/ble1/examples/basic/explorer ./explorer
+Scanning for 10m0s...
+Discovering profile...
+    Service: 1800 Generic Access, Handle (0x01)
+      Characteristic: 2a00 Device Name, Property: 0x0A (WR), Handle(0x02), VHandle(0x03)
+        Value         446578636f6d4645 | "DexcomFE"
+      Characteristic: 2a01 Appearance, Property: 0x02 (R), Handle(0x04), VHandle(0x05)
+        Value         0000 | "\x00\x00"
+      Characteristic: 2a04 Peripheral Preferred Connection Parameters, Property: 0x02 (R), Handle(0x06), VHandle(0x07)
+        Value         900120030000c800 | "\x90\x01 \x03\x00\x00\xc8\x00"
+
+    Service: 1801 Generic Attribute, Handle (0x08)
+      Characteristic: 2a05 Service Changed, Property: 0x20 (I), Handle(0x09), VHandle(0x0A)
+        Descriptor: 2902 Client Characteristic Configuration, Handle(0x0b)
+        Value         0000 | "\x00\x00"
+
+    Service: f8083532849e531cc59430f1f86a4ea5 , Handle (0x0C)
+      Characteristic: f8083533849e531cc59430f1f86a4ea5 , Property: 0x12 (NR), Handle(0x0D), VHandle(0x0E)
+Failed to read characteristic: insufficient authentication
+      Characteristic: f8083534849e531cc59430f1f86a4ea5 , Property: 0x28 (WI), Handle(0x10), VHandle(0x11)
+        Descriptor: 2902 Client Characteristic Configuration, Handle(0x12)
+        Value         0000 | "\x00\x00"
+      Characteristic: f8083535849e531cc59430f1f86a4ea5 , Property: 0x2A (WIR), Handle(0x13), VHandle(0x14)
+        Value         0801 | "\b\x01"
+        Descriptor: 2902 Client Characteristic Configuration, Handle(0x15)
+        Value         0000 | "\x00\x00"
+      Characteristic: f8083536849e531cc59430f1f86a4ea5 , Property: 0x1A (WRN), Handle(0x16), VHandle(0x17)
+        Value         0000000000000000000000000000000000 | "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        Descriptor: 2902 Client Characteristic Configuration, Handle(0x18)
+        Value         0000 | "\x00\x00"
+      Characteristic: f8083537849e531cc59430f1f86a4ea5 , Property: 0x02 (R), Handle(0x19), VHandle(0x1A)
+        Value         03000000 | "\x03\x00\x00\x00"
+
+    Service: 180a Device Information, Handle (0x1B)
+      Characteristic: 2a29 Manufacturer Name String, Property: 0x02 (R), Handle(0x1C), VHandle(0x1D)
+        Value         446578636f6d | "Dexcom"
+      Characteristic: 2a24 Model Number String, Property: 0x02 (R), Handle(0x1E), VHandle(0x1F)
+        Value         53573130373139 | "SW10719"
+      Characteristic: 2a26 Firmware Revision String, Property: 0x02 (R), Handle(0x20), VHandle(0x21)
+        Value         312e302e342e3130 | "1.0.4.10"
+
