@@ -92,15 +92,15 @@ var (
 	Backfill       = g5UUID(0x3536)
 )
 
-func g5UUID(id uint16) string {
-	return fmt.Sprintf("f808%04x849e531cc59430f1f86a4ea5", id)
+func g5UUID(id uint16) ble.UUID {
+	return ble.MustParse(fmt.Sprintf("f808%04x849e531cc59430f1f86a4ea5", id))
 }
 
 func explore(cln ble.Client, p *ble.Profile) error {
 	for _, s := range p.Services {
 		fmt.Printf("    Service: %s %s, Handle (0x%02X)\n", s.UUID, ble.Name(s.UUID), s.Handle)
 
-		if string(s.UUID) == CGMService {
+		if s.UUID.Equal(CGMService) {
 			fmt.Print("      **************** FOUND CGM Service!!!!!!")
 		}
 
