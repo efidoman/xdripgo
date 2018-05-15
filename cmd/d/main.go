@@ -11,6 +11,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	adapter, err := conn.GetAdapter()
 	if err != nil {
 		log.Fatal(err)
@@ -38,6 +39,16 @@ func main() {
 	}
 
 	device.Print(os.Stdout)
+
+	char, err := conn.GetCharacteristic("f8083532-849e-531c-c594-30f1f86a4ea5")
+	if err != nil {
+		log.Print("couldn't get char, err=", err)
+	} else {
+		log.Print("got characteristic")
+		log.Print(char)
+	}
+	return
+
 	log.Print("+++++++++++++++++++++ Calling Handle Notify 3532 ++++++++++++++++++++++++++")
 	err = conn.HandleNotify("f8083532-849e-531c-c594-30f1f86a4ea5", func(data []byte) {
 		log.Print("+++++++++++++++++++++ IN HANDLE NOTIFY 3532 ++++++++++++++++++++++++++")
