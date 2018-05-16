@@ -17,6 +17,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+        adapter.StopDiscovery()
+	adapter.SetDeviceFilter("DexcomFE")
 	device, err := conn.GetDeviceByName("DexcomFE")
 	if err != nil {
 		log.Print("device not in cache yet.")
@@ -25,9 +27,12 @@ func main() {
 		adapter.RemoveDevice(device)
 	}
 
+	Authentication := "f8083535-849e-531c-c594-30f1f86a4ea5"
 	log.Print("Discovering ...")
-	device, err = conn.Discover(0, "DexcomFE")
-	//	device, err = conn.Discover(0, "0000febc-0000-1000-8000-00805f9b34fb")
+	device, err = conn.Discover(0, "DexcomFE") 
+//	device, err = conn.Discover(0, "0000febc-0000-1000-8000-00805f9b34fb") 
+//	device, err = conn.Discover(0, Authentication) 
+//	device, err = conn.Discover(0, "febc") 
 	if err != nil {
 		log.Print("Still couldn't find device after discovery, err=", err)
 		//		log.Fatal(err)
@@ -42,8 +47,9 @@ func main() {
 
 		device.Print(os.Stdout)
 	*/
+	log.Print("Discovered - now calling getcharacteristic")
 
-	char, err := conn.GetCharacteristic("f8083532-849e-531c-c594-30f1f86a4ea5")
+	char, err := conn.GetDeviceCharacteristic(Authentication, "DexcomFE")
 	if err != nil {
 		log.Print("couldn't get char, err=", err)
 	} else {
@@ -52,12 +58,21 @@ func main() {
 		auth_tx := messages.NewAuthRequestTxMessage()
 		err := char.WriteValue(auth_tx.Data)
 		if err != nil {
-			log.Print("write value failed, err=", err)
+			log.Print("failed to write authentication characteristic", err)
 		} else {
-			log.Print("Damn - it worked! write value worked")
+			log.Print("Wrote authentication characteristic", err)
+
+			rx := make(chan byte, 1600)
+			err = conn.HandleNotify(Authentication, func(data []byte) {
+				for _, b := range data {
+					rx <- b
+				}
+				log.Printf("Rx Data (%x)", data)
+			})
 		}
+
 	}
-	return
+        select {}
 
 	log.Print("+++++++++++++++++++++ Calling Handle Notify 3532 ++++++++++++++++++++++++++")
 	err = conn.HandleNotify("f8083532-849e-531c-c594-30f1f86a4ea5", func(data []byte) {
@@ -74,6 +89,7 @@ func main() {
 
 	log.Print("+++++++++++++++++++++ Calling Handle Notify febc ++++++++++++++++++++++++++")
 	err = conn.HandleNotify("0000febc-0000-1000-8000-00805f9b34fb", func(data []byte) {
+//				"0000febc-0000-1000-8000-00805f9b34fb"
 		log.Print("++++++++++++++++++++++++++++ IN HANDLE NOTIFY febc ++++++++++++++++++++++++++")
 		log.Print("+++++ IN HANDLE NOTIFY febc - data=", data)
 		//		device.Print(os.Stdout)

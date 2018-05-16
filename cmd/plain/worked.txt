@@ -1,0 +1,7 @@
+***************** findObject ********************
+
+2018/05/15 20:32:49 got characteristic
+2018/05/15 20:32:49 &{0x19caa000 /org/bluez/hci0/dev_F4_9C_E0_BB_14_7F/service000c/char0013 org.bluez.GattCharacteristic1 map[UUID:{{s} f8083535-849e-531c-c594-30f1f86a4ea5} Service:{{o} /org/bluez/hci0/dev_F4_9C_E0_BB_14_7F/service000c} Value:{{ay} []} Notifying:{{b} false} Flags:{{as} [read write indicate]}] 0x19df5420}
+UUIDv4: 376fb8f0-6f9d-4a7f-aeee-21e99ca5c1a6
+2018/05/15 20:32:50 Damn - it worked! write value worked
+
