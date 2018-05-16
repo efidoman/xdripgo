@@ -2,8 +2,9 @@ package main
 
 import (
 	"github.com/efidoman/ble"
+	"github.com/efidoman/xdripgo/messages"
 	"log"
-	"os"
+	//	"os"
 )
 
 func main() {
@@ -25,20 +26,22 @@ func main() {
 	}
 
 	log.Print("Discovering ...")
-	//	device, err = conn.Discover(0, "DexcomFE")
-	device, err = conn.Discover(0, "0000febc-0000-1000-8000-00805f9b34fb")
+	device, err = conn.Discover(0, "DexcomFE")
+	//	device, err = conn.Discover(0, "0000febc-0000-1000-8000-00805f9b34fb")
 	if err != nil {
 		log.Print("Still couldn't find device after discovery, err=", err)
 		//		log.Fatal(err)
 	}
-	err = device.Connect()
-	if err != nil {
-		log.Print("could not connect to device")
-	} else {
-		log.Print("connected")
-	}
+	/*
+		err = device.Connect()
+		if err != nil {
+			log.Print("could not connect to device")
+		} else {
+			log.Print("connected")
+		}
 
-	device.Print(os.Stdout)
+		device.Print(os.Stdout)
+	*/
 
 	char, err := conn.GetCharacteristic("f8083532-849e-531c-c594-30f1f86a4ea5")
 	if err != nil {
@@ -46,6 +49,13 @@ func main() {
 	} else {
 		log.Print("got characteristic")
 		log.Print(char)
+		auth_tx := messages.NewAuthRequestTxMessage()
+		err := char.WriteValue(auth_tx.Data)
+		if err != nil {
+			log.Print("write value failed, err=", err)
+		} else {
+			log.Print("Damn - it worked! write value worked")
+		}
 	}
 	return
 
