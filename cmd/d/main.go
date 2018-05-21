@@ -1,11 +1,11 @@
 package main
 
-
 import (
 	"github.com/efidoman/ble"
 	"github.com/efidoman/xdripgo/messages"
 	"log"
-//	"os"
+	"os"
+	"time"
 )
 
 func main() {
@@ -32,14 +32,14 @@ func main() {
 	//uuids := []string{"0000febc-0000-1000-8000-00805f9b34fb", "f8083535-849e-531c-c594-30f1f86a4ea5"}
 	uuids := []string{"0000febc-0000-1000-8000-00805f9b34fb"}
 	log.Print("Discovering ...")
-	err = adapter.Discover(0, uuids...)//"febc", "f8083532-849e-531c-c594-30f1f86a4ea5")
+	err = adapter.Discover(0, uuids...) //"febc", "f8083532-849e-531c-c594-30f1f86a4ea5")
 	if err != nil {
 		log.Print("Still couldn't find device after discovery, err=", err)
 	} else {
 		log.Print("Discovered")
-		log.Print(device)
+		//		log.Print(device)
 	}
-        err = conn.Update()
+	err = conn.Update()
 	if err != nil {
 		log.Print("couldn't update", err)
 	} else {
@@ -58,17 +58,23 @@ func main() {
 			log.Print("Connected")
 		}
 	}
+	address := device.Address()
+	log.Print(" Address = ", address, "\n")
 
-	if "DexcomFE" == "DexcomFE" {
+	i := 0
+	for i < 1000 {
 		log.Print("Discovered - now calling getcharacteristic")
 
+		conn.Update()
+
 		//char, err := conn.GetCharacteristic(Authentication)
-		char, err := conn.GetCharacteristic("00002902-0000-1000-8000-00805f9b34fb")
+		char, err := conn.GetCharacteristic("f8083535-849e-531c-c594-30f1f86a4ea5") //uuids[0])
 		if err != nil {
 			log.Print("couldn't get char, err=", err)
+			time.Sleep(5 * time.Second)
 		} else {
 			log.Print("got characteristic")
-			log.Print(char)
+			char.Print(os.Stdout)
 			auth_tx := messages.NewAuthRequestTxMessage()
 			err := char.WriteValue(auth_tx.Data)
 			if err != nil {
@@ -84,6 +90,7 @@ func main() {
 					log.Printf("Rx Data (%x)", data)
 				})
 			}
+			select {}
 
 		}
 	}
