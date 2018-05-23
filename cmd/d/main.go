@@ -4,7 +4,8 @@ import (
 	"github.com/efidoman/ble"
 	"github.com/efidoman/xdripgo/messages"
 	"log"
-	//	"os"
+	"os"
+	"time"
 )
 
 func main() {
@@ -17,8 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//        adapter.StopDiscovery()
-	//	adapter.SetDeviceFilter("DexcomFE")
+
 	device, err := conn.GetDeviceByName("DexcomFE")
 	if err != nil {
 		log.Print("device not in cache yet.")
@@ -27,34 +27,54 @@ func main() {
 		adapter.RemoveDevice(device)
 	}
 
-	Authentication := "f8083535-849e-531c-c594-30f1f86a4ea5"
+	Authentication := "f8083532-849e-531c-c594-30f1f86a4ea5"
+
+	//uuids := []string{"0000febc-0000-1000-8000-00805f9b34fb", "f8083535-849e-531c-c594-30f1f86a4ea5"}
+	uuids := []string{"0000febc-0000-1000-8000-00805f9b34fb"}
 	log.Print("Discovering ...")
-	//	device, err = conn.Discover(0, "DexcomFE")
-	device, err = conn.Discover(0, "0000febc-0000-1000-8000-00805f9b34fb")
-	//	device, err = conn.Discover(0, Authentication)
-	//	device, err = conn.Discover(0, "febc")
+	err = adapter.Discover(0, uuids...) //"febc", "f8083532-849e-531c-c594-30f1f86a4ea5")
 	if err != nil {
 		log.Print("Still couldn't find device after discovery, err=", err)
-		//		log.Fatal(err)
-	}
-
-	err = device.Connect()
-	if err != nil {
-		log.Print("could not connect to device")
 	} else {
-		log.Print("connected")
+		log.Print("Discovered")
+		//		log.Print(device)
+	}
+	err = conn.Update()
+	if err != nil {
+		log.Print("couldn't update", err)
+	} else {
+		log.Print("Updated")
 	}
 
-	device.Print(os.Stdout)
-	if device.Name() == "DexcomFE" {
+	device, err = conn.GetDeviceByName("DexcomFE")
+	if err != nil {
+		log.Print("couldn't get device by name(DexcomFE) = ", err)
+	} else {
+		log.Print("Got Device")
+		err = device.Connect()
+		if err != nil {
+			log.Print("connect failed, error =  ", err)
+		} else {
+			log.Print("Connected")
+		}
+	}
+	address := device.Address()
+	log.Print(" Address = ", address, "\n")
+
+	i := 0
+	for i < 1000 {
 		log.Print("Discovered - now calling getcharacteristic")
 
-		char, err := conn.GetDeviceCharacteristic(Authentication)
+		conn.Update()
+
+		//char, err := conn.GetCharacteristic(Authentication)
+		char, err := conn.GetCharacteristic("f8083535-849e-531c-c594-30f1f86a4ea5") //uuids[0])
 		if err != nil {
 			log.Print("couldn't get char, err=", err)
+			time.Sleep(5 * time.Second)
 		} else {
 			log.Print("got characteristic")
-			log.Print(char)
+			char.Print(os.Stdout)
 			auth_tx := messages.NewAuthRequestTxMessage()
 			err := char.WriteValue(auth_tx.Data)
 			if err != nil {
@@ -70,10 +90,12 @@ func main() {
 					log.Printf("Rx Data (%x)", data)
 				})
 			}
+			select {}
 
 		}
 	}
 	select {}
+	return
 
 	log.Print("+++++++++++++++++++++ Calling Handle Notify 3532 ++++++++++++++++++++++++++")
 	err = conn.HandleNotify("f8083532-849e-531c-c594-30f1f86a4ea5", func(data []byte) {
