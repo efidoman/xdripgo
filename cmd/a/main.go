@@ -3,12 +3,14 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strings"
-
 	log "github.com/Sirupsen/logrus"
+	"github.com/efidoman/xdripgo/messages"
+	"github.com/godbus/dbus"
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/emitter"
+	"os"
+	"strings"
+	"time"
 )
 
 var (
@@ -132,12 +134,37 @@ func findDeviceServices(dev *api.Device) {
 		if strings.Contains(charProps.UUID, Authentication) {
 			auth, err := dev.GetCharByUUID(Authentication)
 			if err != nil {
-				log.Infof("charProps.UUID=(%s), looking for UUID=(%s)", charProps.UUID, Authentication)
-				log.Info("GetCharByUUID", err)
+				log.Errorf("charProps.UUID=(%s), looking for UUID=(%s)", charProps.UUID, Authentication)
+				log.Error("GetCharByUUID", err)
+				return
 			} else {
-				log.Info("GetCharByUUID worked, auth=", auth)
+				//log.Info("GetCharByUUID worked, auth=", auth)
+				options := make(map[string]dbus.Variant)
+				auth_request_tx_message := messages.NewAuthRequestTxMessage()
+
+				err = auth.WriteValue(auth_request_tx_message.Data, options)
+				if err != nil {
+					log.Infof("WriteValue auth(%v) msg(%v) error(%v)", auth, auth_request_tx_message, err)
+					return
+				} else {
+					log.Infof("AuthRequestTxMessage - Tx = %x", auth_request_tx_message.Data)
+					//log.Info("WriteValue to auth worked!!!")
+					time.Sleep(time.Second)
+					options1 := make(map[string]dbus.Variant)
+					response, err := auth.ReadValue(options1)
+					if err != nil {
+						log.Infof("ReadValue did not work error(%s)", err)
+						return
+					} else {
+						log.Infof("AuthRequestTxMessage - Rx = %x", response)
+						auth_challenge_rx_message := messages.NewAuthChallengeRxMessage(response)
+						log.Infof("AuthChallengeRxMessage.Opcode = %x", auth_challenge_rx_message.Opcode)
+						log.Infof("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
+						log.Infof("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
+
+					}
+				}
 			}
-			log.Info("Yo this worked")
 		}
 	}))
 	if err != nil {
@@ -169,4 +196,23 @@ func filterDevice(dev *api.Device, name string) bool {
 	} else {
 		return true
 	}
+}
+
+func encrypt(buffer []byte, id string) []byte {
+	//algorithm := "aes-128-ecb"
+	//	cipher =
+	encrypted := make([]byte, 8)
+	return encrypted
+}
+
+func calculateHash(data []byte, id string) []byte {
+	if len(data) != 8 {
+		log.Fatalf("calculateHash failed data(%x) not length of 8", data)
+	}
+	doubleData := make([]byte, 16)
+	copy(doubleData[0:7], data)
+	copy(doubleData[8:15], data)
+
+	encrypted := encrypt(doubleData, "FE")
+	return encrypted
 }
