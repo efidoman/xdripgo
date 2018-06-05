@@ -162,7 +162,7 @@ func findDeviceServices(dev *api.Device) {
 				} else {
 					log.Infof("AuthRequestTxMessage - Tx = %x", auth_request_tx_message.Data)
 					//log.Info("WriteValue to auth worked!!!")
-					time.Sleep(time.Second)
+					time.Sleep(2*time.Second)
 					options1 := make(map[string]dbus.Variant)
 					response, err := auth.ReadValue(options1)
 					if err != nil {

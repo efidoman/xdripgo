@@ -20,7 +20,7 @@ func NewAuthChallengeRxMessage(data []byte) AuthChallengeRxMessage {
 	if len(data) != 17 {
 		log.Print("Cannot create new AuthChallengeRxMessage - Length not 17 bytes. Length = ", len(data))
 	}
-	m.TokenHash = data[0:9]
+	m.TokenHash = data[1:9]
 	m.Challenge = data[9:]
 	return m
 }
