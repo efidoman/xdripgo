@@ -67,7 +67,7 @@ func main() {
 
 	log.Infof("Cached devices:")
 	for _, dev := range devices {
-		if filterDevice(&dev, name) {
+//		if filterDevice(&dev, name) {
 			// remove device from cache
 			err = adapter.RemoveDevice(dev.Path)
 			if err != nil {
@@ -75,7 +75,7 @@ func main() {
 			} else {
 				log.Infof("Removed %s : %s from cache", dev.Path, name)
 			}
-		}
+//		}
 	}
 
 	log.Infof("Discovering device: %s", name)
