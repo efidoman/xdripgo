@@ -29,7 +29,7 @@ func NewAuthRequestTxMessage() AuthRequestTxMessage {
 	m.Data = d
 
 	m.SingleUseToken = make([]byte, 8)
-	copy(m.SingleUseToken[0:7], d[1:8])
+	copy(m.SingleUseToken[0:8], d[1:9])
 
 	return m
 }

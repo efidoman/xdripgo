@@ -11,7 +11,7 @@ import (
 	"os"
         "crypto/aes"
         "github.com/andreburgaud/crypt2go/ecb"
-        "github.com/andreburgaud/crypt2go/padding"
+        //"github.com/andreburgaud/crypt2go/padding"
 	"strings"
 	"time"
 )
@@ -210,11 +210,8 @@ func cryptKey(id string) string {
 }
 
 func encrypt(buffer []byte, id string) []byte {
-	//algorithm := "aes-128-ecb"
-	//	cipher =
 	key := []byte(cryptKey(id))
-//	encrypted := make([]byte, 8)
-//	return encrypted
+	log.Debugf("key=%x", key) 
 	return encryptBytes(buffer, key)
 }
 
@@ -224,11 +221,13 @@ func encryptBytes(pt, key []byte) []byte {
                 panic(err.Error())
         }
         mode := ecb.NewECBEncrypter(block)
-        padder := padding.NewPkcs7Padding(mode.BlockSize())
-        pt, err = padder.Pad(pt) // padd last block of plaintext if block size less than block cipher size
-        if err != nil {
-                panic(err.Error())
-        }
+	log.Debugf("mode=%v", mode) 
+	log.Debugf("pt=%x", pt) 
+//        padder := padding.NewPkcs7Padding(mode.BlockSize())
+//        pt, err = padder.Pad(pt) // padd last block of plaintext if block size less than block cipher size
+//        if err != nil {
+ //               panic(err.Error())
+  //      }
         ct := make([]byte, len(pt))
         mode.CryptBlocks(ct, pt)
         return ct
@@ -240,9 +239,14 @@ func calculateHash(data []byte, id string) []byte {
 		log.Fatalf("calculateHash failed data(%x) not length of 8", data)
 	}
 	doubleData := make([]byte, 16)
-	copy(doubleData[0:7], data)
-	copy(doubleData[8:15], data)
+	copy(doubleData[0:8], data)
+	copy(doubleData[8:16], data)
+	log.Debugf("doubleData=%x", doubleData) 
 
 	encrypted := encrypt(doubleData, id)
-	return encrypted
+	encrypted_return := make([]byte, 8)
+	copy(encrypted_return, encrypted[0:8])
+	log.Debugf("encrypted=%x", encrypted) 
+	log.Debugf("encrypted_return=%x", encrypted_return) 
+	return encrypted_return
 }
