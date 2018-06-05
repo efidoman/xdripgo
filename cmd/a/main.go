@@ -110,12 +110,13 @@ func findDeviceServices(dev *api.Device) {
 		return
 	}
 	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
-	err = dev.Connect()
+/*	err = dev.Connect()
 	if err != nil {
 		log.Info("dev.Connect() failed", err)
 	} else {
 		log.Info("Connected!!! ")
 	}
+*/
 
 	err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
 		serviceEvent := ev.GetData().(api.GattServiceEvent)
