@@ -40,10 +40,13 @@ const logLevel = log.DebugLevel
 const adapterID = "hci0"
 
 func cmdRun() {
-	cmd := exec.Command("bt-device", "-r DexcomFE")
-	log.Printf("Running command and waiting for it to finish...")
-	err := cmd.Run()
-	log.Printf("Command finished with error: %v", err)
+	cmd := "bt-device"
+	args := []string{"-r", "DexcomFE"}
+	if err := exec.Command(cmd, args...).Run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	fmt.Println("Successfully ran bt-device cmd")
 }
 
 func main() {
