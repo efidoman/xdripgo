@@ -16,7 +16,7 @@ func NewAuthRequestTxMessage() AuthRequestTxMessage {
 	var m AuthRequestTxMessage
 
 	u1 := uuid.Must(uuid.NewV4())
-	fmt.Printf("UUIDv4: %x\n", u1)
+	fmt.Printf("UUIDv4: %x\n", u1.Bytes())
 
 	m.Opcode = 0x01
 	m.EndByte = 0x2
@@ -27,6 +27,9 @@ func NewAuthRequestTxMessage() AuthRequestTxMessage {
 	d[len-1] = m.EndByte
 	copy(d[1:len-1], u1.Bytes())
 	m.Data = d
+
+	m.SingleUseToken = make([]byte, 8)
+	copy(m.SingleUseToken[0:7], d[1:8])
 
 	return m
 }

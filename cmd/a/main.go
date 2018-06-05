@@ -9,6 +9,9 @@ import (
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/emitter"
 	"os"
+        "crypto/aes"
+        "github.com/andreburgaud/crypt2go/ecb"
+        "github.com/andreburgaud/crypt2go/padding"
 	"strings"
 	"time"
 )
@@ -161,6 +164,9 @@ func findDeviceServices(dev *api.Device) {
 						log.Infof("AuthChallengeRxMessage.Opcode = %x", auth_challenge_rx_message.Opcode)
 						log.Infof("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
 						log.Infof("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
+						log.Infof("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
+						hashed := calculateHash(auth_request_tx_message.SingleUseToken, "410BFE") 
+						log.Infof("hashed = %x", hashed)
 
 					}
 				}
@@ -191,19 +197,43 @@ func filterDevice(dev *api.Device, name string) bool {
 		return false
 	}
 	if props.Name != name {
-		log.Debugf("filtering name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
+		log.Debugf("skipping found name=%s addr=%s rssi=%d, wanting=%s", props.Name, props.Address, props.RSSI, name)
 		return false
 	} else {
 		return true
 	}
 }
 
+func cryptKey(id string) string {
+	key := "00" + id + "00" + id
+  	return key
+}
+
 func encrypt(buffer []byte, id string) []byte {
 	//algorithm := "aes-128-ecb"
 	//	cipher =
-	encrypted := make([]byte, 8)
-	return encrypted
+	key := []byte(cryptKey(id))
+//	encrypted := make([]byte, 8)
+//	return encrypted
+	return encryptBytes(buffer, key)
 }
+
+func encryptBytes(pt, key []byte) []byte {
+        block, err := aes.NewCipher(key)
+        if err != nil {
+                panic(err.Error())
+        }
+        mode := ecb.NewECBEncrypter(block)
+        padder := padding.NewPkcs7Padding(mode.BlockSize())
+        pt, err = padder.Pad(pt) // padd last block of plaintext if block size less than block cipher size
+        if err != nil {
+                panic(err.Error())
+        }
+        ct := make([]byte, len(pt))
+        mode.CryptBlocks(ct, pt)
+        return ct
+}
+
 
 func calculateHash(data []byte, id string) []byte {
 	if len(data) != 8 {
@@ -213,6 +243,6 @@ func calculateHash(data []byte, id string) []byte {
 	copy(doubleData[0:7], data)
 	copy(doubleData[8:15], data)
 
-	encrypted := encrypt(doubleData, "FE")
+	encrypted := encrypt(doubleData, id)
 	return encrypted
 }
