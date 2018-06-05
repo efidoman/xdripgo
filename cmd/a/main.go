@@ -9,6 +9,7 @@ import (
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/emitter"
 	"os"
+	"os/exec"
         "crypto/aes"
         "github.com/andreburgaud/crypt2go/ecb"
         //"github.com/andreburgaud/crypt2go/padding"
@@ -38,6 +39,13 @@ func g5UUID(id uint16) string {
 const logLevel = log.DebugLevel
 const adapterID = "hci0"
 
+func cmdRun() {
+	cmd := exec.Command("bt-device", "-r DexcomFE")
+	log.Printf("Running command and waiting for it to finish...")
+	err := cmd.Run()
+	log.Printf("Command finished with error: %v", err)
+}
+
 func main() {
 	var name = "DexcomFE"
 
@@ -55,6 +63,7 @@ func main() {
 		log.Error(err)
 		os.Exit(1)
 	}
+        cmdRun()
 
 	log.Infof("Cached devices:")
 	for _, dev := range devices {
@@ -110,13 +119,13 @@ func findDeviceServices(dev *api.Device) {
 		return
 	}
 	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
-/*	err = dev.Connect()
+	err = dev.Connect()
 	if err != nil {
 		log.Info("dev.Connect() failed", err)
 	} else {
 		log.Info("Connected!!! ")
 	}
-*/
+
 
 	err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
 		serviceEvent := ev.GetData().(api.GattServiceEvent)
@@ -198,7 +207,7 @@ func filterDevice(dev *api.Device, name string) bool {
 		return false
 	}
 	if props.Name != name {
-		log.Debugf("skipping found name=%s addr=%s rssi=%d, wanting=%s", props.Name, props.Address, props.RSSI, name)
+		log.Debugf("skipping(%s) addr(%s) rssi(%d), want(%s)", props.Name, props.Address, props.RSSI, name)
 		return false
 	} else {
 		return true
