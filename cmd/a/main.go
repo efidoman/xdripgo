@@ -2,17 +2,17 @@
 package main
 
 import (
+	"crypto/aes"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/andreburgaud/crypt2go/ecb"
 	"github.com/efidoman/xdripgo/messages"
 	"github.com/godbus/dbus"
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/emitter"
 	"os"
 	"os/exec"
-        "crypto/aes"
-        "github.com/andreburgaud/crypt2go/ecb"
-        //"github.com/andreburgaud/crypt2go/padding"
+	//"github.com/andreburgaud/crypt2go/padding"
 	"strings"
 	"time"
 )
@@ -44,7 +44,7 @@ func cmdRun() {
 	args := []string{"-r", "DexcomFE"}
 	if err := exec.Command(cmd, args...).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		//		os.Exit(1)
 	}
 	fmt.Println("Successfully ran bt-device cmd")
 }
@@ -55,34 +55,37 @@ func main() {
 	log.SetLevel(logLevel)
 	defer api.Exit()
 
-	adapter, err := api.GetAdapter(adapterID)
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
+	/*
+		adapter, err := api.GetAdapter(adapterID)
+		if err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
 
-	devices, err := api.GetDevices()
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
-        cmdRun()
+		devices, err := api.GetDevices()
+		if err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
+	*/
+	cmdRun()
 
-	log.Infof("Cached devices:")
-	for _, dev := range devices {
-//		if filterDevice(&dev, name) {
-			// remove device from cache
-			err = adapter.RemoveDevice(dev.Path)
-			if err != nil {
-				log.Warnf("Cannot remove %s : %s", dev.Path, err.Error())
-			} else {
-				log.Infof("Removed %s : %s from cache", dev.Path, name)
-			}
-//		}
-	}
+	/*
+	   	log.Infof("Cached devices:")
+	   	for _, dev := range devices {
+	   //		if filterDevice(&dev, name) {
+	   			// remove device from cache
+	   			err = adapter.RemoveDevice(dev.Path)
+	   			if err != nil {
+	   				log.Warnf("Cannot remove %s : %s", dev.Path, err.Error())
+	   			} else {
+	   				log.Infof("Removed %s : %s from cache", dev.Path, name)
+	   			}
+	   //		}
+	   	}
 
-	log.Infof("Discovering device: %s", name)
-	err = discoverDevice(name)
+	*/
+	err := discoverDevice(name)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -98,12 +101,18 @@ func discoverDevice(name string) error {
 		return err
 	}
 
-	log.Debugf("Started discovery")
+	log.Infof("Started discovery - looking for device: %s", name)
 	err = api.On("discovery", emitter.NewCallback(func(ev emitter.Event) {
 		discoveryEvent := ev.GetData().(api.DiscoveredDeviceEvent)
 		dev := discoveryEvent.Device
 		if filterDevice(dev, name) {
 			log.Infof("found device %s, stopping discovery", name)
+			err = api.StopDiscovery()
+			if err != nil {
+				log.Errorf("Failed StopDiscovery %s", err)
+			} else {
+				log.Info("Discovery Stopped")
+			}
 			findDeviceServices(dev)
 		}
 	}))
@@ -127,8 +136,9 @@ func findDeviceServices(dev *api.Device) {
 		log.Info("dev.Connect() failed", err)
 	} else {
 		log.Info("Connected!!! ")
-	}
+		time.Sleep(time.Millisecond * 20)
 
+	}
 
 	err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
 		serviceEvent := ev.GetData().(api.GattServiceEvent)
@@ -165,7 +175,7 @@ func findDeviceServices(dev *api.Device) {
 				} else {
 					log.Infof("AuthRequestTxMessage - Tx = %x", auth_request_tx_message.Data)
 					//log.Info("WriteValue to auth worked!!!")
-					time.Sleep(2*time.Second)
+					time.Sleep(20 * time.Millisecond)
 					options1 := make(map[string]dbus.Variant)
 					response, err := auth.ReadValue(options1)
 					if err != nil {
@@ -178,23 +188,19 @@ func findDeviceServices(dev *api.Device) {
 						log.Infof("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
 						log.Infof("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
 						log.Infof("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
-						hashed := calculateHash(auth_request_tx_message.SingleUseToken, "410BFE") 
+						hashed := calculateHash(auth_request_tx_message.SingleUseToken, "410BFE")
 						log.Infof("hashed = %x", hashed)
 
 					}
 				}
+				os.Exit(0)
 			}
 		}
 	}))
 	if err != nil {
-		log.Info("dev.Onchar error ", err)
+		log.Errorf("Error in dev.Onchar - %s", err)
 	}
 
-	err = api.StopDiscovery()
-	if err != nil {
-		log.Errorf("Failed StopDiscovery %s", err)
-		return
-	}
 	select {}
 
 }
@@ -219,33 +225,32 @@ func filterDevice(dev *api.Device, name string) bool {
 
 func cryptKey(id string) string {
 	key := "00" + id + "00" + id
-  	return key
+	return key
 }
 
 func encrypt(buffer []byte, id string) []byte {
 	key := []byte(cryptKey(id))
-	log.Debugf("key=%x", key) 
+	log.Debugf("key=%x", key)
 	return encryptBytes(buffer, key)
 }
 
 func encryptBytes(pt, key []byte) []byte {
-        block, err := aes.NewCipher(key)
-        if err != nil {
-                panic(err.Error())
-        }
-        mode := ecb.NewECBEncrypter(block)
-	log.Debugf("mode=%v", mode) 
-	log.Debugf("pt=%x", pt) 
-//        padder := padding.NewPkcs7Padding(mode.BlockSize())
-//        pt, err = padder.Pad(pt) // padd last block of plaintext if block size less than block cipher size
-//        if err != nil {
- //               panic(err.Error())
-  //      }
-        ct := make([]byte, len(pt))
-        mode.CryptBlocks(ct, pt)
-        return ct
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err.Error())
+	}
+	mode := ecb.NewECBEncrypter(block)
+	log.Debugf("mode=%v", mode)
+	log.Debugf("pt=%x", pt)
+	//        padder := padding.NewPkcs7Padding(mode.BlockSize())
+	//        pt, err = padder.Pad(pt) // padd last block of plaintext if block size less than block cipher size
+	//        if err != nil {
+	//               panic(err.Error())
+	//      }
+	ct := make([]byte, len(pt))
+	mode.CryptBlocks(ct, pt)
+	return ct
 }
-
 
 func calculateHash(data []byte, id string) []byte {
 	if len(data) != 8 {
@@ -254,12 +259,12 @@ func calculateHash(data []byte, id string) []byte {
 	doubleData := make([]byte, 16)
 	copy(doubleData[0:8], data)
 	copy(doubleData[8:16], data)
-	log.Debugf("doubleData=%x", doubleData) 
+	log.Debugf("doubleData=%x", doubleData)
 
 	encrypted := encrypt(doubleData, id)
 	encrypted_return := make([]byte, 8)
 	copy(encrypted_return, encrypted[0:8])
-	log.Debugf("encrypted=%x", encrypted) 
-	log.Debugf("encrypted_return=%x", encrypted_return) 
+	log.Debugf("encrypted=%x", encrypted)
+	log.Debugf("encrypted_return=%x", encrypted_return)
 	return encrypted_return
 }
