@@ -40,6 +40,7 @@ const logLevel = log.DebugLevel
 const adapterID = "hci0"
 const g5_bt_id = "DexcomFE"
 const g5_id = "410BFE"
+
 //const g5_bt_id = "Dexcom59"
 ////const g5_id = "40WG59"
 
@@ -128,11 +129,20 @@ func findDeviceServices(dev *api.Device) {
 	if dev == nil {
 		return
 	}
-	props, err := dev.GetProperties()
 
-	if err != nil {
-		log.Errorf("%s: Failed to get properties: %s", dev.Path, err.Error())
-		return
+		props, err := dev.GetProperties()
+	sum := 0
+	for i := 0; i < 100; i++ {
+
+		if err != nil {
+			sum += i
+			log.Errorf("%s: Try %d Failed to get properties: %s", i, dev.Path, err.Error())
+			time.Sleep(time.Millisecond * 20)
+			props, err = dev.GetProperties()
+		} else {
+			log.Debugf("%s: Got properties", dev.Path)
+			sum = 100
+		}
 	}
 	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
 	err = dev.Connect()
@@ -159,7 +169,7 @@ func findDeviceServices(dev *api.Device) {
 		charProps := charEvent.Properties
 		//		log.Info("char callback charEvent = ", charEvent)
 		//	log.Info("char callback charProps = ", charProps)
-			log.Infof("found charProps.UUID=(%s), looking for UUID=(%s)", charProps.UUID, Authentication)
+		log.Infof("found charProps.UUID=(%s), looking for UUID=(%s)", charProps.UUID, Authentication)
 		if strings.Contains(charProps.UUID, Authentication) {
 			auth, err := dev.GetCharByUUID(Authentication)
 			if err != nil {
