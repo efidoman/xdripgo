@@ -38,10 +38,14 @@ func g5UUID(id uint16) string {
 
 const logLevel = log.DebugLevel
 const adapterID = "hci0"
+const g5_bt_id = "DexcomFE"
+const g5_id = "410BFE"
+//const g5_bt_id = "Dexcom59"
+////const g5_id = "40WG59"
 
 func cmdRun() {
 	cmd := "bt-device"
-	args := []string{"-r", "DexcomFE"}
+	args := []string{"-r", g5_bt_id}
 	if err := exec.Command(cmd, args...).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		//		os.Exit(1)
@@ -50,7 +54,7 @@ func cmdRun() {
 }
 
 func main() {
-	var name = "DexcomFE"
+	var name = g5_bt_id
 
 	log.SetLevel(logLevel)
 	defer api.Exit()
@@ -136,7 +140,7 @@ func findDeviceServices(dev *api.Device) {
 		log.Info("dev.Connect() failed", err)
 	} else {
 		log.Info("Connected!!! ")
-		time.Sleep(time.Millisecond * 20)
+		time.Sleep(time.Millisecond * 30)
 
 	}
 
@@ -155,8 +159,7 @@ func findDeviceServices(dev *api.Device) {
 		charProps := charEvent.Properties
 		//		log.Info("char callback charEvent = ", charEvent)
 		//	log.Info("char callback charProps = ", charProps)
-		//	log.Infof("found charProps.UUID=(%s), looking for UUID=(%s)", charProps.UUID, Authentication)
-		//	log.Infof("charProps.UUID=(%s)", charProps.UUID)
+			log.Infof("found charProps.UUID=(%s), looking for UUID=(%s)", charProps.UUID, Authentication)
 		if strings.Contains(charProps.UUID, Authentication) {
 			auth, err := dev.GetCharByUUID(Authentication)
 			if err != nil {
@@ -188,7 +191,7 @@ func findDeviceServices(dev *api.Device) {
 						log.Infof("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
 						log.Infof("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
 						log.Infof("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
-						hashed := calculateHash(auth_request_tx_message.SingleUseToken, "410BFE")
+						hashed := calculateHash(auth_request_tx_message.SingleUseToken, g5_id)
 						log.Infof("hashed = %x", hashed)
 
 					}
