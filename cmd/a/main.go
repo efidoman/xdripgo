@@ -31,7 +31,6 @@ var (
 	Backfill       = g5UUID(0x3536)
 )
 
-//f8083535-849e-531c-c594-30f1f86a4ea5
 func g5UUID(id uint16) string {
 	return fmt.Sprintf("f808%04x-849e-531c-c594-30f1f86a4ea5", id)
 }
@@ -49,7 +48,6 @@ func cmdRun() {
 	args := []string{"-r", g5_bt_id}
 	if err := exec.Command(cmd, args...).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		//		os.Exit(1)
 	}
 	fmt.Println("Successfully ran bt-device cmd")
 }
@@ -130,7 +128,7 @@ func findDeviceServices(dev *api.Device) {
 		return
 	}
 
-		props, err := dev.GetProperties()
+	props, err := dev.GetProperties()
 	sum := 0
 	for i := 0; i < 100; i++ {
 
@@ -153,7 +151,6 @@ func findDeviceServices(dev *api.Device) {
 		time.Sleep(time.Millisecond * 20)
 
 	}
-
 
 	err = dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 		charEvent := ev.GetData().(api.GattCharacteristicEvent)
