@@ -141,7 +141,7 @@ func findDeviceServices(dev *api.Device) {
 			props, err = dev.GetProperties()
 		} else {
 			log.Debugf("%s: Got properties", dev.Path)
-			sum = 100
+			i = 100
 		}
 	}
 	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
@@ -150,19 +150,10 @@ func findDeviceServices(dev *api.Device) {
 		log.Info("dev.Connect() failed", err)
 	} else {
 		log.Info("Connected!!! ")
-		time.Sleep(time.Millisecond * 30)
+		time.Sleep(time.Millisecond * 20)
 
 	}
 
-	err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
-		serviceEvent := ev.GetData().(api.GattServiceEvent)
-		serviceProps := serviceEvent.Properties
-		//	log.Info("service callback serviceEvent = ", serviceEvent)
-		log.Info("service callback serviceProps = ", serviceProps)
-	}))
-	if err != nil {
-		log.Info("dev.On(service)", err)
-	}
 
 	err = dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 		charEvent := ev.GetData().(api.GattCharacteristicEvent)
@@ -212,6 +203,16 @@ func findDeviceServices(dev *api.Device) {
 	}))
 	if err != nil {
 		log.Errorf("Error in dev.Onchar - %s", err)
+	}
+
+	err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
+		serviceEvent := ev.GetData().(api.GattServiceEvent)
+		serviceProps := serviceEvent.Properties
+		//	log.Info("service callback serviceEvent = ", serviceEvent)
+		log.Info("service callback serviceProps = ", serviceProps)
+	}))
+	if err != nil {
+		log.Info("dev.On(service)", err)
 	}
 
 	select {}
