@@ -150,7 +150,7 @@ func findDeviceServices(dev *api.Device) {
 		log.Info("Connected!!! ")
 		time.Sleep(time.Millisecond * 20)
 
-	}
+	 }
 
 	err = dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 		charEvent := ev.GetData().(api.GattCharacteristicEvent)
