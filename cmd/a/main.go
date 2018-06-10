@@ -135,11 +135,10 @@ func findDeviceServices(dev *api.Device) {
 	}
 
 	props, err := dev.GetProperties()
-	sum := 0
 	for i := 0; i < 100; i++ {
 
 		if err != nil {
-			sum += i
+			i += i
 			log.Errorf("%s: Try %d Failed to get properties: %s", dev.Path, i, err.Error())
 			time.Sleep(time.Millisecond * 20)
 			props, err = dev.GetProperties()
@@ -156,15 +155,26 @@ func findDeviceServices(dev *api.Device) {
 		time.Sleep(time.Millisecond * 20)
         }
 
+	for j := 0; j < 100; j++ {
 	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
 	err = dev.Connect()
 	if err != nil {
-		log.Info("dev.Connect() failed", err)
+		j += j
+		log.Infof("dev.Connect() %d try failed", j, err)
 	} else {
 		log.Info("Connected!!! ")
 		time.Sleep(time.Millisecond * 20)
+		j=100
 
 	 }
+	}
+	if err != nil {
+		log.Info("Connect failed after final try  ", err)
+		return
+	} else {
+		log.Info("Connected!!! ")
+		time.Sleep(time.Millisecond * 20)
+        }
 
 	err = dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 		charEvent := ev.GetData().(api.GattCharacteristicEvent)
