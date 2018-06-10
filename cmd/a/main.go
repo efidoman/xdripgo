@@ -1,4 +1,5 @@
 //shows how to watch for new devices and list them
+// worked 8 times in a row on rpi hat
 package main
 
 import (
