@@ -110,18 +110,23 @@ func discoverDevice(name string) error {
 		discoveryEvent := ev.GetData().(api.DiscoveredDeviceEvent)
 		dev := discoveryEvent.Device
 		if filterDevice(dev, name) {
-			log.Infof("found device %s, stopping discovery", name)
-			err = api.StopDiscovery()
-			if err != nil {
-				log.Errorf("Failed StopDiscovery %s", err)
-			} else {
-				log.Info("Discovery Stopped")
-			}
+			//stopDiscovery()
 			findDeviceServices(dev)
+			stopDiscovery()
 		}
 	}))
 
 	return err
+}
+
+func stopDiscovery() {
+	log.Info("Stopping discovery")
+	err := api.StopDiscovery()
+	if err != nil {
+		log.Errorf("Failed StopDiscovery %s", err)
+	} else {
+		log.Info("Discovery Stopped")
+	}
 }
 
 func findDeviceServices(dev *api.Device) {
@@ -135,7 +140,7 @@ func findDeviceServices(dev *api.Device) {
 
 		if err != nil {
 			sum += i
-			log.Errorf("%s: Try %d Failed to get properties: %s", i, dev.Path, err.Error())
+			log.Errorf("%s: Try %d Failed to get properties: %s", dev.Path, i, err.Error())
 			time.Sleep(time.Millisecond * 20)
 			props, err = dev.GetProperties()
 		} else {
@@ -143,6 +148,14 @@ func findDeviceServices(dev *api.Device) {
 			i = 100
 		}
 	}
+	if err != nil {
+		log.Info("dev.GetProperties() failed", err)
+		return
+	} else {
+		log.Info("Got Properties!!! ")
+		time.Sleep(time.Millisecond * 20)
+        }
+
 	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
 	err = dev.Connect()
 	if err != nil {
