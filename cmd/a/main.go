@@ -140,12 +140,12 @@ func findDeviceServices(dev *api.Device) {
 		if err != nil {
 			i += i
 			log.Errorf("%s: Try %d Failed to get properties: %s", dev.Path, i, err.Error())
-			time.Sleep(time.Millisecond * 20)
 			props, err = dev.GetProperties()
 		} else {
 			log.Debugf("%s: Got properties", dev.Path)
 			i = 100
 		}
+	       time.Sleep(time.Millisecond * 20)
 	}
 	if err != nil {
 		log.Info("dev.GetProperties() failed", err)
@@ -160,13 +160,13 @@ func findDeviceServices(dev *api.Device) {
 	err = dev.Connect()
 	if err != nil {
 		j += j
-		log.Infof("dev.Connect() %d try failed", j, err)
+		log.Infof("dev.Connect() %d try failed - %s", j, err)
 	} else {
 		log.Info("Connected!!! ")
-		time.Sleep(time.Millisecond * 20)
 		j=100
 
 	 }
+	time.Sleep(time.Millisecond * 20)
 	}
 	if err != nil {
 		log.Info("Connect failed after final try  ", err)
