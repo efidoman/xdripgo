@@ -37,7 +37,14 @@ func g5UUID(id uint16) string {
 	return fmt.Sprintf("f808%04x-849e-531c-c594-30f1f86a4ea5", id)
 }
 
-const logLevel = log.DebugLevel
+//const logLevel = log.DebugLevel // most verbose
+const logLevel = log.InfoLevel
+
+//const logLevel = log.WarnLevel
+//const logLevel = log.ErrorLevel
+//const logLevel = log.FatalLevel // exits if this log level is called
+//const logLevel = log.PanicLevel // least verbose, panics
+
 const adapterID = "hci0"
 const g5_bt_id = "DexcomFE"
 const g5_id = "410BFE"
@@ -45,13 +52,14 @@ const g5_id = "410BFE"
 //const g5_bt_id = "Dexcom59"
 ////const g5_id = "40WG59"
 
-func cmdRun() {
+func removeDevice(device string) {
 	cmd := "bt-device"
-	args := []string{"-r", g5_bt_id}
+	args := []string{"-r", device}
 	if err := exec.Command(cmd, args...).Run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		log.Warnf("Remove device from cach, cmd(%s %v), %s", cmd, args, err)
+	} else {
+		log.Infof("Successfully removed device from cache - %s %s", cmd, args)
 	}
-	fmt.Println("Successfully ran bt-device cmd")
 }
 
 func main() {
@@ -73,7 +81,7 @@ func main() {
 			os.Exit(1)
 		}
 	*/
-	cmdRun()
+	removeDevice(name)
 
 	/*
 	   	log.Infof("Cached devices:")
@@ -92,8 +100,7 @@ func main() {
 	*/
 	err := discoverDevice(name)
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		log.Fatalf("discoverDevice failed - %s", err)
 	}
 
 	select {}
@@ -122,7 +129,7 @@ func discoverDevice(name string) error {
 }
 
 func stopDiscovery() {
-	log.Info("Stopping discovery")
+	log.Debug("Stopping discovery")
 	err := api.StopDiscovery()
 	if err != nil {
 		log.Errorf("Failed StopDiscovery %s", err)
@@ -133,6 +140,7 @@ func stopDiscovery() {
 
 func findDeviceServices(dev *api.Device) {
 	if dev == nil {
+		log.Error("findDeviceServices dev = nil")
 		return
 	}
 
@@ -141,122 +149,120 @@ func findDeviceServices(dev *api.Device) {
 
 		if err != nil {
 			i += i
-			log.Errorf("%s: Try %d Failed to get properties: %s", dev.Path, i, err.Error())
+			log.Warnf("%s: Try %d Failed to get properties: %s", dev.Path, i, err.Error())
 			props, err = dev.GetProperties()
 		} else {
 			log.Debugf("%s: Got properties", dev.Path)
 			i = 100
 		}
-	       time.Sleep(time.Millisecond * 20)
+		time.Sleep(time.Millisecond * 20)
 	}
 	if err != nil {
-		log.Info("dev.GetProperties() failed", err)
+		log.Errorf("dev.GetProperties failed, %s", err)
 		return
 	} else {
-		log.Info("Got Properties!!! ")
+		log.Info("Got Properties")
 		time.Sleep(time.Millisecond * 20)
-        }
+	}
 
 	for j := 0; j < 100; j++ {
-	log.Infof("name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
-	err = dev.Connect()
-	if err != nil {
-		j += j
-		log.Infof("dev.Connect() %d try failed - %s", j, err)
-	} else {
-		log.Info("Connected!!! ")
-		j=100
+		err = dev.Connect()
+		if err != nil {
+			j += j
+			log.Warnf("dev.Connect() %d try failed - %s", j, err)
+		} else {
+			j = 100
 
-	 }
-	time.Sleep(time.Millisecond * 20)
+		}
+		time.Sleep(time.Millisecond * 20)
 	}
 	if err != nil {
-		log.Info("Connect failed after final try  ", err)
+		log.Errorf("Connect failed after final try  ", err)
 		return
 	} else {
-		log.Info("Connected!!! ")
+		log.Infof("Connected to name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
 		time.Sleep(time.Millisecond * 20)
-        }
+	}
 
 	err = dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 		charEvent := ev.GetData().(api.GattCharacteristicEvent)
 		charProps := charEvent.Properties
-		//		log.Info("char callback charEvent = ", charEvent)
-		//	log.Info("char callback charProps = ", charProps)
-		log.Infof("found charProps.UUID=(%s), looking for UUID=(%s)", charProps.UUID, Authentication)
+		log.Debugf("char callback charEvent = ", charEvent)
+		log.Debugf("char callback charProps = ", charProps)
+		log.Debugf("found charProps.UUID=%s, looking for UUID=%s", charProps.UUID, Authentication)
 		if strings.Contains(charProps.UUID, Authentication) {
 			auth, err := dev.GetCharByUUID(Authentication)
 			if err != nil {
-				log.Errorf("charProps.UUID=(%s), looking for UUID=(%s)", charProps.UUID, Authentication)
-				log.Error("GetCharByUUID", err)
+				log.Debugf("GetCharByUUID - found=%s, looking for=%s, %s", charProps.UUID, Authentication, err)
 				return
 			} else {
-				//log.Info("GetCharByUUID worked, auth=", auth)
+				log.Debugf("GetCharByUUID worked, auth=", auth)
 				options := make(map[string]dbus.Variant)
 				auth_request_tx_message := messages.NewAuthRequestTxMessage()
 
 				err = auth.WriteValue(auth_request_tx_message.Data, options)
 				if err != nil {
-					log.Infof("WriteValue auth(%v) msg(%v) error(%v)", auth, auth_request_tx_message, err)
+					log.Errorf("WriteValue auth=%v msg=%v,  %s", auth, auth_request_tx_message, err)
+					return
+				}
+				log.Infof("AuthRequestTxMessage - Tx = %x", auth_request_tx_message.Data)
+				time.Sleep(20 * time.Millisecond)
+				options1 := make(map[string]dbus.Variant)
+				response, err := auth.ReadValue(options1)
+				if err != nil {
+					log.Errorf("ReadValue after AuthRequestTx failed,  %s", err)
+					return
+				}
+				log.Infof("AuthRequestTxMessage - Rx = %x", response)
+				auth_challenge_rx_message := messages.NewAuthChallengeRxMessage(response)
+				log.Debugf("AuthChallengeRxMessage.Opcode = %x", auth_challenge_rx_message.Opcode)
+				log.Debugf("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
+				log.Debugf("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
+				log.Debugf("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
+				hashed := calculateHash(auth_request_tx_message.SingleUseToken, g5_id)
+				log.Debugf("hashed = %x", hashed)
+				if !reflect.DeepEqual(auth_challenge_rx_message.TokenHash, hashed) {
+					log.Errorf("TokenHash=%x does not match hashed=%x", auth_challenge_rx_message.TokenHash, hashed)
+					return
+				}
+				challengeHash := calculateHash(auth_challenge_rx_message.Challenge, g5_id)
+
+				auth_challenge_tx_message := messages.NewAuthChallengeTxMessage(challengeHash)
+
+				err = auth.WriteValue(auth_challenge_tx_message.Data, options)
+				if err != nil {
+					log.Errorf("WriteValue auth_challenge, %s", err)
+					return
+				}
+				log.Infof("AuthChallengeTxMessage - Tx = %x", auth_challenge_tx_message.Data)
+				time.Sleep(20 * time.Millisecond)
+				options2 := make(map[string]dbus.Variant)
+				response, err = auth.ReadValue(options2)
+				if err != nil {
+					log.Errorf("ReadValue auth challenge, %s", err)
 					return
 				} else {
-					log.Infof("AuthRequestTxMessage - Tx = %x", auth_request_tx_message.Data)
-					//log.Info("WriteValue to auth worked!!!")
-					time.Sleep(20 * time.Millisecond)
-					options1 := make(map[string]dbus.Variant)
-					response, err := auth.ReadValue(options1)
-					if err != nil {
-						log.Infof("ReadValue did not work error(%s)", err)
-						return
-					} else {
-						log.Infof("AuthRequestTxMessage - Rx = %x", response)
-						auth_challenge_rx_message := messages.NewAuthChallengeRxMessage(response)
-						log.Infof("AuthChallengeRxMessage.Opcode = %x", auth_challenge_rx_message.Opcode)
-						log.Infof("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
-						log.Infof("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
-						log.Infof("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
-						hashed := calculateHash(auth_request_tx_message.SingleUseToken, g5_id)
-						log.Infof("hashed = %x", hashed)
-						if reflect.DeepEqual(auth_challenge_rx_message.TokenHash, hashed) {
-							challengeHash := calculateHash(auth_challenge_rx_message.Challenge, g5_id)
-							auth_challenge_tx_message := NewAuthChallengeTxMessage(challengeHash)
-							err = auth.WriteValue(auth_challenge_tx_message.Data, options)
-							if err != nil {
-								log.Infof("WriteValue auth_challengeerror(%v)", err)
-								return
-							} else {
-								log.Infof("WriteValue auth_challengeworked")
-								time.Sleep(20 * time.Millisecond)
-								options2 := make(map[string]dbus.Variant)
-								response, err = auth.ReadValue(options2)
-								if err != nil {
-									log.Infof("ReadValue auth challenge did not work error(%s)", err)
-									return
-								} else {
-									log.Infof("AuthChallengeTxMessage - Rx = %x", response)
-									auth_status_rx_message := messages.NewAuthStatusRxMessage(response)
-								}
-							}
-						}
-
-					}
+					log.Debugf("AuthStatusRxMessage = %x", response)
+					auth_status_rx_message := messages.NewAuthStatusRxMessage(response)
+					log.Infof("AuthChallengeRxMessage - Rx = %x", auth_status_rx_message)
 				}
-				os.Exit(0)
+
 			}
+			os.Exit(0)
 		}
 	}))
 	if err != nil {
-		log.Errorf("Error in dev.Onchar - %s", err)
+		log.Errorf("dev(Onchar), %s", err)
 	}
 
 	err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
 		serviceEvent := ev.GetData().(api.GattServiceEvent)
 		serviceProps := serviceEvent.Properties
 		//	log.Info("service callback serviceEvent = ", serviceEvent)
-		log.Info("service callback serviceProps = ", serviceProps)
+		log.Infof("Service found = %v", serviceProps)
 	}))
 	if err != nil {
-		log.Info("dev.On(service)", err)
+		log.Errorf("dev.On(service), %s", err)
 	}
 
 	select {}
