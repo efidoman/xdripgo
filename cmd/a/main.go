@@ -242,9 +242,9 @@ func findDeviceServices(dev *api.Device) {
 					log.Errorf("ReadValue auth challenge, %s", err)
 					return
 				} else {
-					log.Debugf("AuthStatusRxMessage = %x", response)
+					log.Infof("AuthStatusRxMessage Rx = %x", response)
 					auth_status_rx_message := messages.NewAuthStatusRxMessage(response)
-					log.Infof("AuthChallengeRxMessage - Rx = %x", auth_status_rx_message)
+					log.Debugf("AuthStatusRxMessage = %v", auth_status_rx_message)
 				}
 
 			}
@@ -259,7 +259,7 @@ func findDeviceServices(dev *api.Device) {
 		serviceEvent := ev.GetData().(api.GattServiceEvent)
 		serviceProps := serviceEvent.Properties
 		//	log.Info("service callback serviceEvent = ", serviceEvent)
-		log.Infof("Service found = %v", serviceProps)
+		log.Debugf("Service found = %v", serviceProps)
 	}))
 	if err != nil {
 		log.Errorf("dev.On(service), %s", err)
