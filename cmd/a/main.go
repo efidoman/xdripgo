@@ -13,6 +13,7 @@ import (
 	"github.com/muka/go-bluetooth/emitter"
 	"os"
 	"os/exec"
+	"reflect"
 	//"github.com/andreburgaud/crypt2go/padding"
 	"strings"
 	"time"
@@ -110,9 +111,10 @@ func discoverDevice(name string) error {
 		discoveryEvent := ev.GetData().(api.DiscoveredDeviceEvent)
 		dev := discoveryEvent.Device
 		if filterDevice(dev, name) {
-			//stopDiscovery()
-			findDeviceServices(dev)
+			// on rpi zero hat if I stopDiscovery before Connect it stops having the software caused connect abort error - I think
 			stopDiscovery()
+			findDeviceServices(dev)
+			//stopDiscovery()
 		}
 	}))
 
@@ -215,6 +217,27 @@ func findDeviceServices(dev *api.Device) {
 						log.Infof("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
 						hashed := calculateHash(auth_request_tx_message.SingleUseToken, g5_id)
 						log.Infof("hashed = %x", hashed)
+						if reflect.DeepEqual(auth_challenge_rx_message.TokenHash, hashed) {
+							challengeHash := calculateHash(auth_challenge_rx_message.Challenge, g5_id)
+							auth_challenge_tx_message := NewAuthChallengeTxMessage(challengeHash)
+							err = auth.WriteValue(auth_challenge_tx_message.Data, options)
+							if err != nil {
+								log.Infof("WriteValue auth_challengeerror(%v)", err)
+								return
+							} else {
+								log.Infof("WriteValue auth_challengeworked")
+								time.Sleep(20 * time.Millisecond)
+								options2 := make(map[string]dbus.Variant)
+								response, err = auth.ReadValue(options2)
+								if err != nil {
+									log.Infof("ReadValue auth challenge did not work error(%s)", err)
+									return
+								} else {
+									log.Infof("AuthChallengeTxMessage - Rx = %x", response)
+									auth_status_rx_message := messages.NewAuthStatusRxMessage(response)
+								}
+							}
+						}
 
 					}
 				}

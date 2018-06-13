@@ -1,0 +1,25 @@
+INFO[0000] Removed /org/bluez/hci0/dev_3C_2E_F9_A1_4C_B5 : DexcomFE from cache 
+INFO[0000] Discovering device: DexcomFE                 
+DEBU[0000] Started discovery                            
+DEBU[0001] skipping() addr(4B:F6:0E:6A:A6:D4) rssi(-43), want(DexcomFE) 
+DEBU[0160] skipping(DexcomU6) addr(F4:9C:E0:BB:14:7F) rssi(-98), want(DexcomFE) 
+INFO[0469] found device DexcomFE, stopping discovery    
+INFO[0469] name=DexcomFE addr=FF:5C:14:C0:E2:65 rssi=-59 
+INFO[0476] Connected!!!                                 
+INFO[0476] service callback serviceProps = &{true /org/bluez/hci0/dev_FF_5C_14_C0_E2_65 [] 00001801-0000-1000-8000-00805f9b34fb} 
+INFO[0476] service callback serviceProps = &{true /org/bluez/hci0/dev_FF_5C_14_C0_E2_65 [] f8083532-849e-531c-c594-30f1f86a4ea5} 
+INFO[0477] service callback serviceProps = &{true /org/bluez/hci0/dev_FF_5C_14_C0_E2_65 [] 0000180a-0000-1000-8000-00805f9b34fb} 
+UUIDv4: 8261c31f2b9343dbab986847fe0b1762
+INFO[0477] AuthRequestTxMessage - Tx = 018261c31f2b9343db02 
+INFO[0479] AuthRequestTxMessage - Rx = 03a0dacfeac9e5228a3436be82be13db9d 
+INFO[0479] AuthChallengeRxMessage.Opcode = 3            
+INFO[0479] AuthChallengeRxMessage.TokenHash = 03a0dacfeac9e5228a 
+INFO[0479] AuthChallengeRxMessage.Challenge = 3436be82be13db9d 
+INFO[0479] auth_request_tx_message.SingleUseToken = 8261c31f2b9343db 
+DEBU[0479] doubleData=8261c31f2b9343db8261c31f2b9343db  
+DEBU[0479] key=30303431304246453030343130424645         
+DEBU[0479] mode=&{0x11e72c20 16 [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]} 
+DEBU[0479] pt=8261c31f2b9343db8261c31f2b9343db          
+DEBU[0479] encrypted=a0dacfeac9e5228aebe929bf0a27fcc8   
+DEBU[0479] encrypted_return=a0dacfeac9e5228a            
+INFO[0479] hashed = a0dacfeac9e5228a       
