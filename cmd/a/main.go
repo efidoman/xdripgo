@@ -302,6 +302,17 @@ func findDeviceServices(dev *api.Device) {
 					return
 				}
 				log.Infof("BondRequestTxMessage = %x", message.Data)
+				time.Sleep(24 * time.Millisecond)
+
+				time_message := messages.NewTransmitterTimeTxMessage()
+				err = auth.WriteValue(time_message.Data, options)
+				if err != nil {
+					log.Errorf("WriteValue tx_time_tx, %s", err)
+					return
+				}
+				// TODO: VersionRequestTx/RX??
+
+				log.Infof("TransmitterTimeTxMessage = %x", message.Data)
 				time.Sleep(20 * time.Millisecond)
 			}
 			os.Exit(0)
@@ -314,7 +325,6 @@ func findDeviceServices(dev *api.Device) {
 	err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
 		serviceEvent := ev.GetData().(api.GattServiceEvent)
 		serviceProps := serviceEvent.Properties
-		//	log.Info("service callback serviceEvent = ", serviceEvent)
 		log.Debugf("Service found = %v", serviceProps)
 	}))
 	if err != nil {
@@ -362,11 +372,6 @@ func encryptBytes(pt, key []byte) []byte {
 	mode := ecb.NewECBEncrypter(block)
 	log.Debugf("mode=%v", mode)
 	log.Debugf("pt=%x", pt)
-	//        padder := padding.NewPkcs7Padding(mode.BlockSize())
-	//        pt, err = padder.Pad(pt) // padd last block of plaintext if block size less than block cipher size
-	//        if err != nil {
-	//               panic(err.Error())
-	//      }
 	ct := make([]byte, len(pt))
 	mode.CryptBlocks(ct, pt)
 	return ct
