@@ -4,6 +4,7 @@ package main
 
 import (
 	"crypto/aes"
+	"flag"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/andreburgaud/crypt2go/ecb"
@@ -14,7 +15,6 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	//"github.com/andreburgaud/crypt2go/padding"
 	"strings"
 	"time"
 )
@@ -31,7 +31,16 @@ var (
 	Control        = g5UUID(0x3534)
 	Authentication = g5UUID(0x3535)
 	Backfill       = g5UUID(0x3536)
+
+	adapter_id = flag.String("a", "hci0", "bluetooth adapter id")
+	id         string // first argument is dexcom id serial number 6 digits
 )
+
+func usage() {
+	fmt.Fprintf(os.Stderr, "usage: %s dexcom_6digit_serial_num\n", os.Args[0])
+	flag.PrintDefaults()
+	os.Exit(1)
+}
 
 func g5UUID(id uint16) string {
 	return fmt.Sprintf("f808%04x-849e-531c-c594-30f1f86a4ea5", id)
@@ -45,31 +54,45 @@ const logLevel = log.InfoLevel
 //const logLevel = log.FatalLevel // exits if this log level is called
 //const logLevel = log.PanicLevel // least verbose, panics
 
-const adapterID = "hci0"
-const g5_bt_id = "DexcomFE"
-const g5_id = "410BFE"
+//const g5_bt_id = "DexcomFE"
+//const g5_id = "410BFE"
 
 //const g5_bt_id = "Dexcom59"
 ////const g5_id = "40WG59"
 
-func removeDevice(device string) {
+func removeDevice(name string) {
 	cmd := "bt-device"
-	args := []string{"-r", device}
+	args := []string{"-r", name}
 	if err := exec.Command(cmd, args...).Run(); err != nil {
-		log.Warnf("Remove device from cach, cmd(%s %v), %s", cmd, args, err)
+		log.Warnf("Remove bt device from cach, cmd(%s %v), %s", cmd, args, err)
 	} else {
 		log.Infof("Successfully removed device from cache - %s %s", cmd, args)
 	}
 }
 
 func main() {
-	var name = g5_bt_id
+	flag.Parse()
+	flag.Usage = usage
+
+	if flag.NArg() < 1 {
+		usage()
+	}
+
+	id = flag.Arg(0)
+
+	if len(id) != 6 {
+		usage()
+	}
+
+	name := "Dexcom" + id[4:]
+	// TODO: figure out why adapter_id isn't defaulting to hci0
+	log.Infof("Dexcom Transmitter Serial Number=%s, adapter=%s", name, adapter_id)
 
 	log.SetLevel(logLevel)
 	defer api.Exit()
 
 	/*
-		adapter, err := api.GetAdapter(adapterID)
+		adapter, err := api.GetAdapter(adapter_id)
 		if err != nil {
 			log.Error(err)
 			os.Exit(1)
@@ -213,19 +236,19 @@ func findDeviceServices(dev *api.Device) {
 					log.Errorf("ReadValue after AuthRequestTx failed,  %s", err)
 					return
 				}
-				log.Infof("AuthRequestTxMessage - Rx = %x", response)
+				log.Infof("Rx = %x", response)
 				auth_challenge_rx_message := messages.NewAuthChallengeRxMessage(response)
 				log.Debugf("AuthChallengeRxMessage.Opcode = %x", auth_challenge_rx_message.Opcode)
 				log.Debugf("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
 				log.Debugf("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
 				log.Debugf("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
-				hashed := calculateHash(auth_request_tx_message.SingleUseToken, g5_id)
+				hashed := calculateHash(auth_request_tx_message.SingleUseToken, id)
 				log.Debugf("hashed = %x", hashed)
 				if !reflect.DeepEqual(auth_challenge_rx_message.TokenHash, hashed) {
 					log.Errorf("TokenHash=%x does not match hashed=%x", auth_challenge_rx_message.TokenHash, hashed)
 					return
 				}
-				challengeHash := calculateHash(auth_challenge_rx_message.Challenge, g5_id)
+				challengeHash := calculateHash(auth_challenge_rx_message.Challenge, id)
 
 				auth_challenge_tx_message := messages.NewAuthChallengeTxMessage(challengeHash)
 
@@ -242,11 +265,44 @@ func findDeviceServices(dev *api.Device) {
 					log.Errorf("ReadValue auth challenge, %s", err)
 					return
 				} else {
-					log.Infof("AuthStatusRxMessage Rx = %x", response)
-					auth_status_rx_message := messages.NewAuthStatusRxMessage(response)
-					log.Debugf("AuthStatusRxMessage = %v", auth_status_rx_message)
+					log.Infof("Rx = %x", response)
+					status := messages.NewAuthStatusRxMessage(response)
+					log.Debugf("AuthStatusRxMessage = %v", status)
+					log.Debugf("AuthStatusRxMessage = %v", status)
+					log.Debugf("Bonded = %v", status.Bonded)
+					log.Debugf("Authenticated = %v", status.Authenticated)
+					if status.Authenticated != 1 {
+						log.Error("transmitter rejected auth challenge")
+						return
+					}
+
+				}
+				// try commenting out keep alive and see if it still works. It many not be necessary
+
+				keep_alive_message := messages.NewKeepAliveMessage(25)
+
+				err = auth.WriteValue(keep_alive_message.Data, options)
+				if err != nil {
+					log.Errorf("WriteValue keep_alive, %s", err)
+					return
+				}
+				log.Infof("KeepAliveTxMessage = %x", keep_alive_message.Data)
+				time.Sleep(20 * time.Millisecond)
+
+				if status.Bonded == 1 {
+					log.Info("transmitter already bonded")
+					return
 				}
 
+				message := messages.NewBondRequestTxMessage()
+
+				err = auth.WriteValue(message.Data, options)
+				if err != nil {
+					log.Errorf("WriteValue bond_request_tx, %s", err)
+					return
+				}
+				log.Infof("BondRequestTxMessage = %x", message.Data)
+				time.Sleep(20 * time.Millisecond)
 			}
 			os.Exit(0)
 		}
