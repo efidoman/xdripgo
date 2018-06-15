@@ -32,9 +32,8 @@ var (
 	Control        = g5UUID(0x3534)
 	Authentication = g5UUID(0x3535)
 	Backfill       = g5UUID(0x3536)
-
-ontrol
-	id         string // first argument is dexcom id serial number 6 digits
+	id             string // first argument is dexcom id serial number 6 digits
+	adapter_id     = flag.String("d", "hci0", "adapter id")
 )
 
 func usage() {
@@ -47,8 +46,8 @@ func g5UUID(id uint16) string {
 	return fmt.Sprintf("f808%04x-849e-531c-c594-30f1f86a4ea5", id)
 }
 
-//const logLevel = log.DebugLevel // most verbose
-const logLevel = log.InfoLevel
+const logLevel = log.DebugLevel // most verbose
+//const logLevel = log.InfoLevel
 
 //const logLevel = log.WarnLevel
 //const logLevel = log.ErrorLevel
