@@ -73,7 +73,7 @@ func main() {
 
 	now := time.Now()
 	secs := now.Unix()
-	m := messages.NewKeepAliveTxMessage(uint32(secs))
+	m := messages.NewKeepAliveTxMessage(25)
 	fmt.Printf("%T Opcode (0x06) = %x\n", m, m.Opcode)
 	fmt.Printf("   Data = %x\n", m.Data)
 
