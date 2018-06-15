@@ -11,6 +11,7 @@ import (
 	"github.com/efidoman/xdripgo/messages"
 	"github.com/godbus/dbus"
 	"github.com/muka/go-bluetooth/api"
+	"github.com/muka/go-bluetooth/bluez/profile"
 	"github.com/muka/go-bluetooth/emitter"
 	"os"
 	"os/exec"
@@ -219,103 +220,10 @@ func findDeviceServices(dev *api.Device) {
 				log.Debugf("GetCharByUUID - found=%s, looking for=%s, %s", charProps.UUID, Authentication, err)
 				return
 			} else {
-				log.Debugf("GetCharByUUID worked, auth=", auth)
-				options := make(map[string]dbus.Variant)
-				auth_request_tx_message := messages.NewAuthRequestTxMessage()
-
-				err = auth.WriteValue(auth_request_tx_message.Data, options)
-				if err != nil {
-					log.Errorf("WriteValue auth=%v msg=%v,  %s", auth, auth_request_tx_message, err)
-					return
-				}
-				log.Infof("AuthRequestTxMessage - Tx = %x", auth_request_tx_message.Data)
-				time.Sleep(20 * time.Millisecond)
-				options1 := make(map[string]dbus.Variant)
-				response, err := auth.ReadValue(options1)
-				if err != nil {
-					log.Errorf("ReadValue after AuthRequestTx failed,  %s", err)
-					return
-				}
-				log.Infof("Rx = %x", response)
-				auth_challenge_rx_message := messages.NewAuthChallengeRxMessage(response)
-				log.Debugf("AuthChallengeRxMessage.Opcode = %x", auth_challenge_rx_message.Opcode)
-				log.Debugf("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
-				log.Debugf("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
-				log.Debugf("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
-				hashed := calculateHash(auth_request_tx_message.SingleUseToken, id)
-				log.Debugf("hashed = %x", hashed)
-				if !reflect.DeepEqual(auth_challenge_rx_message.TokenHash, hashed) {
-					log.Errorf("TokenHash=%x does not match hashed=%x", auth_challenge_rx_message.TokenHash, hashed)
-					return
-				}
-				challengeHash := calculateHash(auth_challenge_rx_message.Challenge, id)
-
-				auth_challenge_tx_message := messages.NewAuthChallengeTxMessage(challengeHash)
-
-				err = auth.WriteValue(auth_challenge_tx_message.Data, options)
-				if err != nil {
-					log.Errorf("WriteValue auth_challenge, %s", err)
-					return
-				}
-				log.Infof("AuthChallengeTxMessage - Tx = %x", auth_challenge_tx_message.Data)
-				time.Sleep(20 * time.Millisecond)
-				options2 := make(map[string]dbus.Variant)
-				response, err = auth.ReadValue(options2)
-				if err != nil {
-					log.Errorf("ReadValue auth challenge, %s", err)
-					return
-				} else {
-					log.Infof("Rx = %x", response)
-					status := messages.NewAuthStatusRxMessage(response)
-					log.Debugf("AuthStatusRxMessage = %v", status)
-					log.Debugf("AuthStatusRxMessage = %v", status)
-					log.Debugf("Bonded = %v", status.Bonded)
-					log.Debugf("Authenticated = %v", status.Authenticated)
-					if status.Authenticated != 1 {
-						log.Error("transmitter rejected auth challenge")
-						return
-					}
-
-				}
-				// try commenting out keep alive and see if it still works. It many not be necessary
-
-				keep_alive_message := messages.NewKeepAliveMessage(25)
-
-				err = auth.WriteValue(keep_alive_message.Data, options)
-				if err != nil {
-					log.Errorf("WriteValue keep_alive, %s", err)
-					return
-				}
-				log.Infof("KeepAliveTxMessage = %x", keep_alive_message.Data)
-				time.Sleep(20 * time.Millisecond)
-
-				if status.Bonded == 1 {
-					log.Info("transmitter already bonded")
-					return
-				}
-
-				message := messages.NewBondRequestTxMessage()
-
-				err = auth.WriteValue(message.Data, options)
-				if err != nil {
-					log.Errorf("WriteValue bond_request_tx, %s", err)
-					return
-				}
-				log.Infof("BondRequestTxMessage = %x", message.Data)
-				time.Sleep(24 * time.Millisecond)
-
-				time_message := messages.NewTransmitterTimeTxMessage()
-				err = auth.WriteValue(time_message.Data, options)
-				if err != nil {
-					log.Errorf("WriteValue tx_time_tx, %s", err)
-					return
-				}
-				// TODO: VersionRequestTx/RX??
-
-				log.Infof("TransmitterTimeTxMessage = %x", message.Data)
-				time.Sleep(20 * time.Millisecond)
+				log.Debugf("GetCharByUUID auth=", auth)
+				authenticate(auth)
+				os.Exit(0)
 			}
-			os.Exit(0)
 		}
 	}))
 	if err != nil {
@@ -333,6 +241,120 @@ func findDeviceServices(dev *api.Device) {
 
 	select {}
 
+}
+
+func authenticate(auth *profile.GattCharacteristic1) {
+	var status messages.AuthStatusRxMessage
+
+	options := make(map[string]dbus.Variant)
+	auth_request_tx_message := messages.NewAuthRequestTxMessage()
+
+	err := auth.WriteValue(auth_request_tx_message.Data, options)
+	if err != nil {
+		log.Errorf("WriteValue auth=%v msg=%v,  %s", auth, auth_request_tx_message, err)
+		return
+	}
+	log.Infof("AuthRequestTxMessage - Tx = %x", auth_request_tx_message.Data)
+	time.Sleep(20 * time.Millisecond)
+	options1 := make(map[string]dbus.Variant)
+	response, err := auth.ReadValue(options1)
+	if err != nil {
+		log.Errorf("ReadValue after AuthRequestTx failed,  %s", err)
+		return
+	}
+	log.Infof("Rx = %x", response)
+	auth_challenge_rx_message := messages.NewAuthChallengeRxMessage(response)
+	log.Debugf("AuthChallengeRxMessage.Opcode = %x", auth_challenge_rx_message.Opcode)
+	log.Debugf("AuthChallengeRxMessage.TokenHash = %x", auth_challenge_rx_message.TokenHash)
+	log.Debugf("AuthChallengeRxMessage.Challenge = %x", auth_challenge_rx_message.Challenge)
+	log.Debugf("auth_request_tx_message.SingleUseToken = %x", auth_request_tx_message.SingleUseToken)
+	hashed := calculateHash(auth_request_tx_message.SingleUseToken, id)
+	log.Debugf("hashed = %x", hashed)
+	if !reflect.DeepEqual(auth_challenge_rx_message.TokenHash, hashed) {
+		log.Errorf("TokenHash=%x does not match hashed=%x", auth_challenge_rx_message.TokenHash, hashed)
+		return
+	}
+	challengeHash := calculateHash(auth_challenge_rx_message.Challenge, id)
+
+	auth_challenge_tx_message := messages.NewAuthChallengeTxMessage(challengeHash)
+
+	err = auth.WriteValue(auth_challenge_tx_message.Data, options)
+	if err != nil {
+		log.Errorf("WriteValue auth_challenge, %s", err)
+		return
+	}
+	log.Infof("AuthChallengeTxMessage - Tx = %x", auth_challenge_tx_message.Data)
+	time.Sleep(20 * time.Millisecond)
+	options2 := make(map[string]dbus.Variant)
+	response, err = auth.ReadValue(options2)
+	if err != nil {
+		log.Errorf("ReadValue auth challenge, %s", err)
+		return
+	} else {
+		log.Infof("Rx = %x", response)
+		status = messages.NewAuthStatusRxMessage(response)
+		log.Debugf("AuthStatusRxMessage = %v", status)
+		log.Debugf("AuthStatusRxMessage = %v", status)
+		log.Debugf("Bonded = %v", status.Bonded)
+		log.Debugf("Authenticated = %v", status.Authenticated)
+		if status.Authenticated != 1 {
+			log.Error("transmitter rejected auth challenge")
+			return
+		}
+	}
+	// try commenting out keep alive and see if it still works. It many not be necessary
+
+	keep_alive_message := messages.NewKeepAliveTxMessage(25)
+
+	err = auth.WriteValue(keep_alive_message.Data, options)
+	if err != nil {
+		log.Errorf("WriteValue keep_alive, %s", err)
+		return
+	}
+	log.Infof("KeepAliveTxMessage = %x", keep_alive_message.Data)
+	time.Sleep(20 * time.Millisecond)
+
+	if status.Bonded == 1 {
+		log.Info("transmitter already bonded")
+		return
+	}
+
+	message := messages.NewBondRequestTxMessage()
+
+	err = auth.WriteValue(message.Data, options)
+	if err != nil {
+		log.Errorf("WriteValue bond_request_tx, %s", err)
+		return
+	}
+	log.Infof("BondRequestTxMessage = %x", message.Data)
+	//time.Sleep(24 * time.Millisecond)
+
+	// end of authentication
+
+	/*
+		time_message := messages.NewTransmitterTimeTxMessage()
+		err = auth.WriteValue(time_message.Data, options)
+		if err != nil {
+			log.Errorf("WriteValue tx_time_tx, %s", err)
+			return
+		}
+		// TODO: VersionRequestTx/RX??
+
+		log.Infof("TransmitterTimeTxMessage = %x", message.Data)
+		time.Sleep(20 * time.Millisecond)
+		response, err = auth.ReadValue(options2)
+		if err != nil {
+			log.Errorf("ReadValue TransmitterTimeTxMessage, %s", err)
+			return
+		} else {
+			log.Infof("Rx = %x", response)
+			time_message := messages.NewTransmitterTimeRxMessage(response)
+			log.Infof("NewTransmitterTimeRxMessage = %v", time_message)
+			log.Infof("Status = %v", time_message.Status)
+			log.Infof("CurrentTime = %v", time_message.CurrentTime)
+			log.Infof("SessionStartTime = %v", time_message.SessionStartTime)
+		}
+	*/
 }
 
 func filterDevice(dev *api.Device, name string) bool {
