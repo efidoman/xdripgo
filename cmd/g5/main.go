@@ -270,6 +270,36 @@ func findControlServiceAndControl(dev *api.Device) {
 			log.Infof("CurrentTime = %v", time_message.CurrentTime)
 			log.Infof("SessionStartTime = %v", time_message.SessionStartTime)
 		}
+
+		// TODO: implement message processing, but for now get glucose first
+
+		message := messages.NewGlucoseTxMessage()
+		err = control.WriteValue(message.Data, options)
+		if err != nil {
+			log.Errorf("WriteValue tx_time_tx, %s", err)
+			return
+		}
+
+		log.Infof("GlucoseTxMessage = %x", message.Data)
+		time.Sleep(20 * time.Millisecond)
+		response, err = control.ReadValue(options)
+		if err != nil {
+			log.Errorf("ReadValue GlucoseTxMessage, %s", err)
+			return
+		} else {
+			log.Infof("Rx = %x", response)
+			gluc_message := messages.NewGlucoseRxMessage(response)
+			log.Infof("NewGlucoseRxMessage = %v", gluc_message)
+			log.Infof("GlucoseBytes = %v", gluc_message.GlucoseBytes)
+			log.Infof("Timestamp = %v", gluc_message.Timestamp)
+			log.Infof("State = %v", gluc_message.State)
+			log.Infof("Status = %v", gluc_message.Status)
+			log.Infof("Sequence = %v", gluc_message.Sequence)
+			log.Infof("Trend = %v", gluc_message.Trend)
+			log.Infof("GlucoseIsDisplayOnly = %v", gluc_message.GlucoseIsDisplayOnly)
+		}
+		os.Exit(0)
+
 	}
 	return
 }
