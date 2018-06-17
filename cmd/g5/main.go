@@ -216,8 +216,8 @@ func findAuthenticationServiceAndAuthenticate(dev *api.Device) {
 	err := dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 		charEvent := ev.GetData().(api.GattCharacteristicEvent)
 		charProps := charEvent.Properties
-		log.Debugf("char callback charEvent = ", charEvent)
-		log.Debugf("char callback charProps = ", charProps)
+		log.Debugf("char callback charEvent = %v", charEvent)
+		log.Debugf("char callback charProps = %v", charProps)
 		log.Debugf("found charProps.UUID=%s, looking for UUID=%s", charProps.UUID, Authentication)
 		if strings.Contains(charProps.UUID, Authentication) {
 			auth, err := dev.GetCharByUUID(Authentication)
@@ -235,17 +235,6 @@ func findAuthenticationServiceAndAuthenticate(dev *api.Device) {
 		log.Errorf("dev(Onchar), %s", err)
 	}
 
-	/*
-		err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
-			serviceEvent := ev.GetData().(api.GattServiceEvent)
-			serviceProps := serviceEvent.Properties
-			log.Debugf("Service found = %v", serviceProps)
-		}))
-		if err != nil {
-			log.Errorf("dev.On(service), %s", err)
-		}
-	*/
-
 	select {}
 
 }
@@ -257,34 +246,32 @@ func findControlServiceAndControl(dev *api.Device) {
 		log.Errorf("control GetCharByUUID error, =%s", err)
 	} else {
 		log.Debugf("control GetCharByUUID - found=%v", control)
+
+		time_message := messages.NewTransmitterTimeTxMessage()
+		options := make(map[string]dbus.Variant)
+		err = control.WriteValue(time_message.Data, options)
+		if err != nil {
+			log.Errorf("WriteValue tx_time_tx, %s", err)
+			return
+		}
+		// TODO: consider implementting VersionRequestTx/RX here, however, it does not seem necessary.
+
+		log.Infof("TransmitterTimeTxMessage = %x", time_message.Data)
+		time.Sleep(20 * time.Millisecond)
+		response, err := control.ReadValue(options)
+		if err != nil {
+			log.Errorf("ReadValue TransmitterTimeTxMessage, %s", err)
+			return
+		} else {
+			log.Infof("Rx = %x", response)
+			time_message := messages.NewTransmitterTimeRxMessage(response)
+			log.Infof("NewTransmitterTimeRxMessage = %v", time_message)
+			log.Infof("Status = %v", time_message.Status)
+			log.Infof("CurrentTime = %v", time_message.CurrentTime)
+			log.Infof("SessionStartTime = %v", time_message.SessionStartTime)
+		}
 	}
 	return
-	/*
-		err := dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
-			charEvent := ev.GetData().(api.GattCharacteristicEvent)
-			charProps := charEvent.Properties
-			log.Debugf("control char callback charEvent = ", charEvent)
-			log.Debugf("control char callback charProps = ", charProps)
-			log.Debugf("control found charProps.UUID=%s, looking for UUID=%s", charProps.UUID, Control)
-			if strings.Contains(charProps.UUID, Control) {
-				control, err := dev.GetCharByUUID(Control)
-				if err != nil {
-					log.Debugf("control GetCharByUUID - found=%s, looking for=%s, %s", charProps.UUID, Control, err)
-					return
-				} else {
-					log.Debugf("found control GetCharByUUID control=", control)
-					//authenticate(auth)
-				        return
-				}
-			}
-		}))
-		if err != nil {
-			log.Errorf("control dev(Onchar), %s", err)
-		}
-
-		select {}
-	*/
-
 }
 
 func authenticate(auth *profile.GattCharacteristic1) {
@@ -375,30 +362,6 @@ func authenticate(auth *profile.GattCharacteristic1) {
 
 	// end of authentication
 
-	/*
-		time_message := messages.NewTransmitterTimeTxMessage()
-		err = auth.WriteValue(time_message.Data, options)
-		if err != nil {
-			log.Errorf("WriteValue tx_time_tx, %s", err)
-			return
-		}
-		// TODO: VersionRequestTx/RX??
-
-		log.Infof("TransmitterTimeTxMessage = %x", message.Data)
-		time.Sleep(20 * time.Millisecond)
-		response, err = auth.ReadValue(options2)
-		if err != nil {
-			log.Errorf("ReadValue TransmitterTimeTxMessage, %s", err)
-			return
-		} else {
-			log.Infof("Rx = %x", response)
-			time_message := messages.NewTransmitterTimeRxMessage(response)
-			log.Infof("NewTransmitterTimeRxMessage = %v", time_message)
-			log.Infof("Status = %v", time_message.Status)
-			log.Infof("CurrentTime = %v", time_message.CurrentTime)
-			log.Infof("SessionStartTime = %v", time_message.SessionStartTime)
-		}
-	*/
 }
 
 func filterDevice(dev *api.Device, name string) bool {
