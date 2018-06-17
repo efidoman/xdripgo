@@ -300,14 +300,14 @@ func findControlServiceAndControl(dev *api.Device) {
 			log.Infof("GlucoseIsDisplayOnly = %v", gluc_message.GlucoseIsDisplayOnly)
 		}
 
-		message = messages.NewSensorTxMessage()
-		err = control.WriteValue(message.Data, options)
+		msg := messages.NewSensorTxMessage()
+		err = control.WriteValue(msg.Data, options)
 		if err != nil {
 			log.Errorf("WriteValue sensor_tx, %s", err)
 			return
 		}
 
-		log.Infof("SensorTxMessage = %x", message.Data)
+		log.Infof("SensorTxMessage = %x", msg.Data)
 		time.Sleep(20 * time.Millisecond)
 		response, err = control.ReadValue(options)
 		if err != nil {
