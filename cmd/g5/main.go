@@ -34,6 +34,8 @@ var (
 	Backfill       = g5UUID(0x3536)
 	id             string // first argument is dexcom id serial number 6 digits
 	adapter_id     = flag.String("d", "hci0", "adapter id")
+
+	props *profile.Device1Properties
 )
 
 func usage() {
@@ -86,7 +88,7 @@ func main() {
 
 	name := "Dexcom" + id[4:]
 	// TODO: figure out why adapter_id isn't defaulting to hci0
-	log.Infof("Dexcom Transmitter Serial Number=%s, adapter=%s", name, adapter_id)
+	log.Infof("Dexcom Transmitter Serial Number=%s, adapter=%s", name, *adapter_id)
 
 	log.SetLevel(logLevel)
 	defer api.Exit()
@@ -143,7 +145,9 @@ func discoverDevice(name string) error {
 		if filterDevice(dev, name) {
 			// on rpi zero hat if I stopDiscovery before Connect it stops having the software caused connect abort error - I think
 			stopDiscovery()
-			findDeviceServices(dev)
+			getDeviceProperties(dev)
+			connectDevice(dev)
+			findAuthenticationServiceAndAuthenticate(dev)
 			//stopDiscovery()
 		}
 	}))
@@ -161,13 +165,10 @@ func stopDiscovery() {
 	}
 }
 
-func findDeviceServices(dev *api.Device) {
-	if dev == nil {
-		log.Error("findDeviceServices dev = nil")
-		return
-	}
+func getDeviceProperties(dev *api.Device) {
 
-	props, err := dev.GetProperties()
+	var err error
+	props, err = dev.GetProperties()
 	for i := 0; i < 100; i++ {
 
 		if err != nil {
@@ -187,7 +188,10 @@ func findDeviceServices(dev *api.Device) {
 		log.Info("Got Properties")
 		time.Sleep(time.Millisecond * 20)
 	}
+}
 
+func connectDevice(dev *api.Device) {
+	var err error
 	for j := 0; j < 100; j++ {
 		err = dev.Connect()
 		if err != nil {
@@ -206,8 +210,10 @@ func findDeviceServices(dev *api.Device) {
 		log.Infof("Connected to name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
 		time.Sleep(time.Millisecond * 20)
 	}
+}
 
-	err = dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
+func findAuthenticationServiceAndAuthenticate(dev *api.Device) {
+	err := dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 		charEvent := ev.GetData().(api.GattCharacteristicEvent)
 		charProps := charEvent.Properties
 		log.Debugf("char callback charEvent = ", charEvent)
@@ -221,7 +227,7 @@ func findDeviceServices(dev *api.Device) {
 			} else {
 				log.Debugf("GetCharByUUID auth=", auth)
 				authenticate(auth)
-				os.Exit(0)
+				findControlServiceAndControl(dev)
 			}
 		}
 	}))
@@ -229,16 +235,55 @@ func findDeviceServices(dev *api.Device) {
 		log.Errorf("dev(Onchar), %s", err)
 	}
 
-	err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
-		serviceEvent := ev.GetData().(api.GattServiceEvent)
-		serviceProps := serviceEvent.Properties
-		log.Debugf("Service found = %v", serviceProps)
-	}))
-	if err != nil {
-		log.Errorf("dev.On(service), %s", err)
-	}
+	/*
+		err = dev.On("service", emitter.NewCallback(func(ev emitter.Event) {
+			serviceEvent := ev.GetData().(api.GattServiceEvent)
+			serviceProps := serviceEvent.Properties
+			log.Debugf("Service found = %v", serviceProps)
+		}))
+		if err != nil {
+			log.Errorf("dev.On(service), %s", err)
+		}
+	*/
 
 	select {}
+
+}
+
+func findControlServiceAndControl(dev *api.Device) {
+	time.Sleep(20 * time.Millisecond)
+	control, err := dev.GetCharByUUID(Control)
+	if err != nil {
+		log.Errorf("control GetCharByUUID error, =%s", err)
+	} else {
+		log.Debugf("control GetCharByUUID - found=%v", control)
+	}
+	return
+	/*
+		err := dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
+			charEvent := ev.GetData().(api.GattCharacteristicEvent)
+			charProps := charEvent.Properties
+			log.Debugf("control char callback charEvent = ", charEvent)
+			log.Debugf("control char callback charProps = ", charProps)
+			log.Debugf("control found charProps.UUID=%s, looking for UUID=%s", charProps.UUID, Control)
+			if strings.Contains(charProps.UUID, Control) {
+				control, err := dev.GetCharByUUID(Control)
+				if err != nil {
+					log.Debugf("control GetCharByUUID - found=%s, looking for=%s, %s", charProps.UUID, Control, err)
+					return
+				} else {
+					log.Debugf("found control GetCharByUUID control=", control)
+					//authenticate(auth)
+				        return
+				}
+			}
+		}))
+		if err != nil {
+			log.Errorf("control dev(Onchar), %s", err)
+		}
+
+		select {}
+	*/
 
 }
 
@@ -358,6 +403,7 @@ func authenticate(auth *profile.GattCharacteristic1) {
 
 func filterDevice(dev *api.Device, name string) bool {
 	if dev == nil {
+		log.Error("filterDevice dev = nil")
 		return false
 	}
 	props, err := dev.GetProperties()
