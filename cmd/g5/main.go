@@ -276,7 +276,7 @@ func findControlServiceAndControl(dev *api.Device) {
 		message := messages.NewGlucoseTxMessage()
 		err = control.WriteValue(message.Data, options)
 		if err != nil {
-			log.Errorf("WriteValue tx_time_tx, %s", err)
+			log.Errorf("WriteValue glucose_tx, %s", err)
 			return
 		}
 
@@ -290,6 +290,7 @@ func findControlServiceAndControl(dev *api.Device) {
 			log.Infof("Rx = %x", response)
 			gluc_message := messages.NewGlucoseRxMessage(response)
 			log.Infof("NewGlucoseRxMessage = %v", gluc_message)
+			log.Infof("Glucose = %v", gluc_message.Glucose)
 			log.Infof("GlucoseBytes = %v", gluc_message.GlucoseBytes)
 			log.Infof("Timestamp = %v", gluc_message.Timestamp)
 			log.Infof("State = %v", gluc_message.State)
@@ -297,6 +298,29 @@ func findControlServiceAndControl(dev *api.Device) {
 			log.Infof("Sequence = %v", gluc_message.Sequence)
 			log.Infof("Trend = %v", gluc_message.Trend)
 			log.Infof("GlucoseIsDisplayOnly = %v", gluc_message.GlucoseIsDisplayOnly)
+		}
+
+		message = messages.NewSensorTxMessage()
+		err = control.WriteValue(message.Data, options)
+		if err != nil {
+			log.Errorf("WriteValue sensor_tx, %s", err)
+			return
+		}
+
+		log.Infof("SensorTxMessage = %x", message.Data)
+		time.Sleep(20 * time.Millisecond)
+		response, err = control.ReadValue(options)
+		if err != nil {
+			log.Errorf("ReadValue SensorTxMessage, %s", err)
+			return
+		} else {
+			log.Infof("Rx = %x", response)
+			sensor_message := messages.NewSensorRxMessage(response)
+			log.Infof("NewSensorRxMessage = %v", sensor_message)
+			log.Infof("Sensor.Status = %v", sensor_message.Status)
+			log.Infof("Sensor.Timestamp = %v", sensor_message.Timestamp)
+			log.Infof("Sensor.Unfiltered = %v", sensor_message.Unfiltered)
+			log.Infof("Sensor.Filtered = %v", sensor_message.Filtered)
 		}
 		os.Exit(0)
 
