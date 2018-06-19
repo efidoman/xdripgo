@@ -336,33 +336,9 @@ func findControlServiceAndControl(dev *api.Device) {
 			log.Infof("Sensor.Filtered = %v", sensor_message.Filtered)
 		}
 
-		sync_date := time.Now().UnixNano() / 1000000 // time since 1970 in ms
+		//		sync_date := time.Now().UnixNano() / 1000000
+		sync_date := nightscout.Date(time.Now()) // time since 1970 in ms
 		g := xdripgo.NewGlucose(gluc_message, time_rx_message, sensor_message, sync_date, int(props.RSSI), name)
-
-		/*
-			// Entry native
-			g.Device = name
-			g.Date = int64(gluc_message.Timestamp) // probably not Timestamp because I'm not sure it is 1970 based
-			g.DateString = "convert this using nightscout api"
-			g.SGV = int(gluc_message.Glucose)
-			g.Direction = "calculate this?"
-			g.Type = "sgv"
-			g.Filtered = int(sensor_message.Filtered)
-			g.Unfiltered = int(sensor_message.Unfiltered)
-			g.RSSI = int(props.RSSI)
-			g.Noise = 1     // need to calculate this also
-			g.Slope = 1000  // need to use calculated values
-			g.Intercept = 0 // need to use calculated values
-			g.Scale = 1     // what is this?
-			g.MBG = 2       // what is this?
-
-			// added
-			g.SGV = int(gluc_message.Glucose)
-			g.BGlucose = int32(gluc_message.Glucose)
-			g.Trend = 2 // where to get
-			g.State = xdripgo.SensorStateString(gluc_message.State)
-			g.Status = xdripgo.TransmitterStatusString(gluc_message.Status)
-		*/
 
 		gluc_marshalled, err := json.MarshalIndent(g, "", "    ")
 		log.Infof("gluc_marshalled = %v", string(gluc_marshalled))
