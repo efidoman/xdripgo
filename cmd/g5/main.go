@@ -4,20 +4,29 @@ package main
 
 import (
 	"crypto/aes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/andreburgaud/crypt2go/ecb"
+	"github.com/ecc1/nightscout"
+	"github.com/efidoman/xdripgo"
 	"github.com/efidoman/xdripgo/messages"
 	"github.com/godbus/dbus"
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/bluez/profile"
 	"github.com/muka/go-bluetooth/emitter"
+	"io"
 	"os"
 	"os/exec"
 	"reflect"
 	"strings"
 	"time"
+)
+
+type (
+	// Entries is an alias, for conciseness.
+	Entries = nightscout.Entries
 )
 
 var (
@@ -35,8 +44,10 @@ var (
 	id             string // first argument is dexcom id serial number 6 digits
 	adapter_id     = flag.String("d", "hci0", "adapter id")
 
+	name  = "DexcomXX"
 	props *profile.Device1Properties
 )
+
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: %s dexcom_6digit_serial_num\n", os.Args[0])
@@ -86,7 +97,7 @@ func main() {
 		usage()
 	}
 
-	name := "Dexcom" + id[4:]
+	name = "Dexcom" + id[4:]
 	// TODO: figure out why adapter_id isn't defaulting to hci0
 	log.Infof("Dexcom Transmitter Serial Number=%s, adapter=%s", name, *adapter_id)
 
@@ -247,16 +258,19 @@ func findControlServiceAndControl(dev *api.Device) {
 	} else {
 		log.Debugf("control GetCharByUUID - found=%v", control)
 
-		time_message := messages.NewTransmitterTimeTxMessage()
+		time_tx_message := messages.NewTransmitterTimeTxMessage()
 		options := make(map[string]dbus.Variant)
-		err = control.WriteValue(time_message.Data, options)
+		err = control.WriteValue(time_tx_message.Data, options)
 		if err != nil {
 			log.Errorf("WriteValue tx_time_tx, %s", err)
 			return
 		}
 		// TODO: consider implementting VersionRequestTx/RX here, however, it does not seem necessary.
 
-		log.Infof("TransmitterTimeTxMessage = %x", time_message.Data)
+		time_rx_message := messages.TransmitterTimeRxMessage{}
+		gluc_message := messages.GlucoseRxMessage{}
+		sensor_message := messages.SensorRxMessage{}
+		log.Infof("TransmitterTimeTxMessage = %x", time_tx_message.Data)
 		time.Sleep(20 * time.Millisecond)
 		response, err := control.ReadValue(options)
 		if err != nil {
@@ -264,11 +278,11 @@ func findControlServiceAndControl(dev *api.Device) {
 			return
 		} else {
 			log.Infof("Rx = %x", response)
-			time_message := messages.NewTransmitterTimeRxMessage(response)
-			log.Infof("NewTransmitterTimeRxMessage = %v", time_message)
-			log.Infof("Status = %v", time_message.Status)
-			log.Infof("CurrentTime = %v", time_message.CurrentTime)
-			log.Infof("SessionStartTime = %v", time_message.SessionStartTime)
+			time_rx_message = messages.NewTransmitterTimeRxMessage(response)
+			log.Infof("NewTransmitterTimeRxMessage = %v", time_rx_message)
+			log.Infof("Status = %v", time_rx_message.Status)
+			log.Infof("CurrentTime = %v", time_rx_message.CurrentTime)
+			log.Infof("SessionStartTime = %v", time_rx_message.SessionStartTime)
 		}
 
 		// TODO: implement message processing, but for now get glucose first
@@ -288,7 +302,7 @@ func findControlServiceAndControl(dev *api.Device) {
 			return
 		} else {
 			log.Infof("Rx = %x", response)
-			gluc_message := messages.NewGlucoseRxMessage(response)
+			gluc_message = messages.NewGlucoseRxMessage(response)
 			log.Infof("NewGlucoseRxMessage = %v", gluc_message)
 			log.Infof("Glucose = %v", gluc_message.Glucose)
 			log.Infof("GlucoseBytes = %v", gluc_message.GlucoseBytes)
@@ -315,13 +329,45 @@ func findControlServiceAndControl(dev *api.Device) {
 			return
 		} else {
 			log.Infof("Rx = %x", response)
-			sensor_message := messages.NewSensorRxMessage(response)
+			sensor_message = messages.NewSensorRxMessage(response)
 			log.Infof("NewSensorRxMessage = %v", sensor_message)
 			log.Infof("Sensor.Status = %v", sensor_message.Status)
 			log.Infof("Sensor.Timestamp = %v", sensor_message.Timestamp)
 			log.Infof("Sensor.Unfiltered = %v", sensor_message.Unfiltered)
 			log.Infof("Sensor.Filtered = %v", sensor_message.Filtered)
 		}
+
+		sync_date := time.Now().UnixNano() / 1000000 // time since 1970 in ms
+		g := xdripgo.NewGlucose(gluc_message, time_rx_message, sensor_message, sync_date, int(props.RSSI))  
+
+		// Entry native
+		g.Device = name
+		g.Date = int64(gluc_message.Timestamp) // probably not Timestamp because I'm not sure it is 1970 based
+		g.DateString = "convert this using nightscout api"
+		g.SGV = int(gluc_message.Glucose)
+		g.Direction = "calculate this?"
+		g.Type = "sgv"
+		g.Filtered = int(sensor_message.Filtered)
+		g.Unfiltered = int(sensor_message.Unfiltered)
+		g.RSSI = int(props.RSSI)
+		g.Noise = 1     // need to calculate this also
+		g.Slope = 1000  // need to use calculated values
+		g.Intercept = 0 // need to use calculated values
+		g.Scale = 1     // what is this?
+		g.MBG = 2       // what is this?
+
+		// added
+		g.SGV = int(gluc_message.Glucose)
+		g.BGlucose = int32(gluc_message.Glucose)
+		g.Trend = 2                               // where to get
+		g.State = "calculate this based on state" //gluc_message.State
+		g.Status = xdripgo.TransmitterStatusString(sensor_message.Status)
+
+		gluc_marshalled, err := json.MarshalIndent(g, "", "    ")
+		log.Infof("gluc_marshalled = %v", string(gluc_marshalled))
+		deleteFile("/root/myopenaps/monitor/logger/entry2.json")
+		createFile("/root/myopenaps/monitor/logger/entry2.json")
+		writeFile("/root/myopenaps/monitor/logger/entry2.json", "["+string(gluc_marshalled)+"]")
 		os.Exit(0)
 
 	}
@@ -476,4 +522,88 @@ func calculateHash(data []byte, id string) []byte {
 	log.Debugf("encrypted=%x", encrypted)
 	log.Debugf("encrypted_return=%x", encrypted_return)
 	return encrypted_return
+}
+
+func createFile(path string) {
+	// check if file exists
+	var _, err = os.Stat(path)
+
+	// create file if not exists
+	if os.IsNotExist(err) {
+		var file, err = os.Create(path)
+		if isError(err) {
+			return
+		}
+		defer file.Close()
+	}
+
+	log.Infof("File Created Successfully", path)
+}
+
+func writeFile(path string, value string) {
+	// Open file using READ & WRITE permission.
+	var file, err = os.OpenFile(path, os.O_RDWR, 0644)
+	if isError(err) {
+		return
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(value)
+	if isError(err) {
+		return
+	}
+	// Save file changes.
+	err = file.Sync()
+	if isError(err) {
+		return
+	}
+
+	log.Info("File Updated Successfully.")
+}
+
+func readFile(path string) {
+	// Open file for reading.
+	var file, err = os.OpenFile(path, os.O_RDWR, 0644)
+	if isError(err) {
+		return
+	}
+	defer file.Close()
+
+	// Read file, line by line
+	var text = make([]byte, 1024)
+	for {
+		_, err = file.Read(text)
+
+		// Break if finally arrived at end of file
+		if err == io.EOF {
+			break
+		}
+
+		// Break if error occured
+		if err != nil && err != io.EOF {
+			isError(err)
+			break
+		}
+	}
+
+	fmt.Println("Reading from file.")
+	fmt.Println(string(text))
+}
+
+func deleteFile(path string) {
+	// delete file
+	var err = os.Remove(path)
+	if isError(err) {
+		return
+	}
+
+	fmt.Println("File Deleted")
+}
+
+func isError(err error) bool {
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	return (err != nil)
 }
