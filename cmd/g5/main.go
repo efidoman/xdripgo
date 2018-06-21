@@ -7,7 +7,7 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/efidoman/xdripgo"
-        "github.com/muka/go-bluetooth/api"
+	"github.com/muka/go-bluetooth/api"
 	"os"
 )
 
