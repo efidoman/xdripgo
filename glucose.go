@@ -45,11 +45,11 @@ func NewGlucose(g messages.GlucoseRxMessage, t messages.TransmitterTimeRxMessage
 	gluc.Filtered = int(s.Filtered)
 	gluc.Unfiltered = int(s.Unfiltered)
 	gluc.RSSI = int(rssi)
-	gluc.Noise = 1     // need to calculate this also
-	gluc.Slope = 1000  // need to use calculated values
-	gluc.Intercept = 0 // need to use calculated values
-	gluc.Scale = 1     // what is this?
-	gluc.MBG = 2       // what is this?
+	gluc.Noise = 1 // need to calculate this also
+	//gluc.Slope = 1000  // need to use calculated values
+	//gluc.Intercept = 0 // need to use calculated values
+	//gluc.Scale = 1     // what is this?
+	//gluc.MBG = 2       // what is this?
 
 	// added
 	gluc.SGV = int(g.Glucose)
