@@ -7,6 +7,7 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/efidoman/xdripgo"
+        "github.com/muka/go-bluetooth/api"
 	"os"
 )
 
@@ -51,6 +52,7 @@ func main() {
 		usage()
 	}
 
+	defer api.Exit()
 	xdripgo.SetDexcomID(id)
 	//	name = "Dexcom" + id[4:]
 	name = xdripgo.GetDexcomName()
