@@ -33,6 +33,7 @@ func RemoveDevice(name string) {
 
 func DiscoverDevice(name string) error {
 
+	time.Sleep(time.Millisecond * 50)
 	err := api.StartDiscovery()
 	if err != nil {
 		return err
@@ -44,11 +45,14 @@ func DiscoverDevice(name string) error {
 		dev := discoveryEvent.Device
 		if filterDevice(dev, name) {
 			// on rpi zero hat if I stopDiscovery before Connect it stops having the software caused connect abort error - I think
-			stopDiscovery()
 			getDeviceProperties(dev)
+			//stopDiscovery()
 			connectDevice(dev)
 			findAuthenticationServiceAndAuthenticate(dev)
 			//stopDiscovery()
+		} else {
+			log.Debugf("DiscoveryEvent was %v", discoveryEvent)
+			log.Debugf("ev was %v", ev)
 		}
 	}))
 
@@ -68,21 +72,10 @@ func stopDiscovery() {
 func getDeviceProperties(dev *api.Device) {
 
 	var err error
+	time.Sleep(time.Millisecond * 20)
 	props, err = dev.GetProperties()
-	for i := 0; i < 100; i++ {
-
-		if err != nil {
-			i += i
-			log.Warnf("%s: Try %d Failed to get properties: %s", dev.Path, i, err.Error())
-			props, err = dev.GetProperties()
-		} else {
-			log.Debugf("%s: Got properties", dev.Path)
-			i = 100
-		}
-		time.Sleep(time.Millisecond * 20)
-	}
 	if err != nil {
-		log.Errorf("dev.GetProperties failed, %s", err)
+		log.Errorf("getDeviceProperties, %s", err)
 		return
 	} else {
 		log.Info("Got Properties")
@@ -92,20 +85,10 @@ func getDeviceProperties(dev *api.Device) {
 
 func connectDevice(dev *api.Device) {
 	var err error
-	for j := 0; j < 100; j++ {
-		err = dev.Connect()
-		if err != nil {
-			j += j
-			log.Warnf("dev.Connect() %d try failed - %s", j, err)
-		} else {
-			j = 100
-
-		}
-		time.Sleep(time.Millisecond * 20)
-	}
+	time.Sleep(time.Millisecond * 30)
+	err = dev.Connect()
 	if err != nil {
-		log.Errorf("Connect failed after final try  ", err)
-		return
+		log.Errorf("connectDevice, ", err)
 	} else {
 		log.Infof("Connected to name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
 		time.Sleep(time.Millisecond * 20)
@@ -113,7 +96,6 @@ func connectDevice(dev *api.Device) {
 }
 
 func filterDevice(dev *api.Device, name string) bool {
-	log.Debug("In filterDevice")
 	if dev == nil {
 		log.Error("filterDevice dev = nil")
 		return false

@@ -54,9 +54,7 @@ func main() {
 
 	defer api.Exit()
 	xdripgo.SetDexcomID(id)
-	//	name = "Dexcom" + id[4:]
 	name = xdripgo.GetDexcomName()
-	// TODO: figure out why adapter_id isn't defaulting to hci0
 	log.Infof("Dexcom Transmitter Serial Number=%s, adapter=%s, id=%s", name, *adapter_id, xdripgo.GetDexcomID())
 
 	log.SetLevel(logLevel)
