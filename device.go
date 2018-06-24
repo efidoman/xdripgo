@@ -11,6 +11,7 @@ import (
 
 var (
 	props *profile.Device1Properties
+	dev   *api.Device
 )
 
 func getDeviceName() string {
@@ -31,28 +32,50 @@ func RemoveDevice(name string) {
 	}
 }
 
+func GetDevice() *api.Device {
+	return dev
+}
+
 func DiscoverDevice(name string) error {
 
 	time.Sleep(time.Millisecond * 50)
 	err := api.StartDiscovery()
 	if err != nil {
+		log.Errorf("Failed to start discovery: %s", err.Error())
 		return err
+	}
+
+	devices, err := api.GetDevices()
+	if err != nil {
+		return err
+	}
+	adapter := profile.NewAdapter1("hci0")
+
+	for _, d := range devices {
+		p, err := d.GetProperties()
+
+		if err == nil {
+			if p.Name == name {
+				err = adapter.RemoveDevice(d.Path)
+			}
+		}
 	}
 
 	log.Infof("Started discovery - looking for device: %s", name)
 	err = api.On("discovery", emitter.NewCallback(func(ev emitter.Event) {
 		discoveryEvent := ev.GetData().(api.DiscoveredDeviceEvent)
-		dev := discoveryEvent.Device
-		if filterDevice(dev, name) {
+		devTry := discoveryEvent.Device
+		if filterDevice(devTry, name) {
+			dev = devTry
 			// on rpi zero hat if I stopDiscovery before Connect it stops having the software caused connect abort error - I think
-			getDeviceProperties(dev)
-			//stopDiscovery()
-			connectDevice(dev)
-			findAuthenticationServiceAndAuthenticate(dev)
+			stopDiscovery()
+			Retry(8, time.Millisecond*20, getDeviceProperties)
+			Retry(8, time.Millisecond*20, connectDevice)
+			findAuthenticationServiceAndAuthenticate()
 			//stopDiscovery()
 		} else {
-			log.Debugf("DiscoveryEvent was %v", discoveryEvent)
-			log.Debugf("ev was %v", ev)
+			//log.Debugf("DiscoveryEvent was %v", discoveryEvent)
+			//log.Debugf("ev was %v", ev)
 		}
 	}))
 
@@ -69,30 +92,33 @@ func stopDiscovery() {
 	}
 }
 
-func getDeviceProperties(dev *api.Device) {
+func getDeviceProperties() error {
 
+	dev = GetDevice()
 	var err error
-	time.Sleep(time.Millisecond * 20)
+	//time.Sleep(time.Millisecond * 5)
 	props, err = dev.GetProperties()
 	if err != nil {
 		log.Errorf("getDeviceProperties, %s", err)
-		return
 	} else {
 		log.Info("Got Properties")
 		time.Sleep(time.Millisecond * 20)
 	}
+	return err
 }
 
-func connectDevice(dev *api.Device) {
+func connectDevice() error {
+	dev = GetDevice()
 	var err error
-	time.Sleep(time.Millisecond * 30)
+	//time.Sleep(time.Millisecond * 15)
 	err = dev.Connect()
 	if err != nil {
 		log.Errorf("connectDevice, ", err)
 	} else {
 		log.Infof("Connected to name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
-		time.Sleep(time.Millisecond * 20)
+		time.Sleep(time.Millisecond * 15)
 	}
+	return err
 }
 
 func filterDevice(dev *api.Device, name string) bool {

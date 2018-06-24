@@ -9,10 +9,10 @@ import (
 	"github.com/godbus/dbus"
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/bluez/profile"
-	"github.com/muka/go-bluetooth/emitter"
-	"os"
+	//"github.com/muka/go-bluetooth/emitter"
+	//	"os"
 	"reflect"
-	"strings"
+	//"strings"
 	"time"
 )
 
@@ -39,7 +39,24 @@ func g5UUID(id uint16) string {
 	return fmt.Sprintf("f808%04x-849e-531c-c594-30f1f86a4ea5", id)
 }
 
-func findAuthenticationServiceAndAuthenticate(dev *api.Device) {
+func AuthenticateWithoutDiscovery() error {
+	dev = GetDevice()
+	auth, err := dev.GetCharByUUID(Authentication)
+	if err != nil {
+		log.Debugf("GetCharByUUID looking for=%s, %s", Authentication, err)
+	} else {
+		log.Debugf("GetCharByUUID auth=", auth)
+		authenticate(auth)
+		findControlServiceAndControl(dev)
+	}
+	return err
+}
+
+func findAuthenticationServiceAndAuthenticate() {
+	dev = GetDevice()
+	//time.Sleep(1200 * time.Millisecond)
+	Retry(8, time.Millisecond*20, AuthenticateWithoutDiscovery)
+	/* don't have to do this discovery
 	err := dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
 		charEvent := ev.GetData().(api.GattCharacteristicEvent)
 		charProps := charEvent.Properties
@@ -47,15 +64,16 @@ func findAuthenticationServiceAndAuthenticate(dev *api.Device) {
 		log.Debugf("char callback charProps = %v", charProps)
 		log.Debugf("found charProps.UUID=%s, looking for UUID=%s", charProps.UUID, Authentication)
 		if strings.Contains(charProps.UUID, Authentication) {
-			auth, err := dev.GetCharByUUID(Authentication)
-			if err != nil {
-				log.Debugf("GetCharByUUID - found=%s, looking for=%s, %s", charProps.UUID, Authentication, err)
-				return
-			} else {
-				log.Debugf("GetCharByUUID auth=", auth)
-				authenticate(auth)
-				findControlServiceAndControl(dev)
-			}
+			/*
+				auth, err := dev.GetCharByUUID(Authentication)
+				if err != nil {
+					log.Debugf("GetCharByUUID - found=%s, looking for=%s, %s", charProps.UUID, Authentication, err)
+					return
+				} else {
+					log.Debugf("GetCharByUUID auth=", auth)
+					authenticate(auth)
+					findControlServiceAndControl(dev)
+				}
 		}
 	}))
 	if err != nil {
@@ -63,10 +81,11 @@ func findAuthenticationServiceAndAuthenticate(dev *api.Device) {
 	}
 
 	select {}
+	*/
 
 }
 
-func findControlServiceAndControl(dev *api.Device) {
+func findControlServiceAndControl(dev *api.Device) error {
 	time.Sleep(20 * time.Millisecond)
 	control, err := dev.GetCharByUUID(Control)
 	if err != nil {
@@ -79,7 +98,7 @@ func findControlServiceAndControl(dev *api.Device) {
 		err = control.WriteValue(time_tx_message.Data, options)
 		if err != nil {
 			log.Errorf("WriteValue tx_time_tx, %s", err)
-			return
+			//return err
 		}
 		// TODO: consider implementting VersionRequestTx/RX here, however, it does not seem necessary.
 
@@ -91,7 +110,7 @@ func findControlServiceAndControl(dev *api.Device) {
 		response, err := control.ReadValue(options)
 		if err != nil {
 			log.Errorf("ReadValue TransmitterTimeTxMessage, %s", err)
-			return
+			//return err
 		} else {
 			log.Infof("Rx = %x", response)
 			time_rx_message = messages.NewTransmitterTimeRxMessage(response)
@@ -107,7 +126,7 @@ func findControlServiceAndControl(dev *api.Device) {
 		err = control.WriteValue(message.Data, options)
 		if err != nil {
 			log.Errorf("WriteValue glucose_tx, %s", err)
-			return
+			//return err
 		}
 
 		log.Infof("GlucoseTxMessage = %x", message.Data)
@@ -115,26 +134,28 @@ func findControlServiceAndControl(dev *api.Device) {
 		response, err = control.ReadValue(options)
 		if err != nil {
 			log.Errorf("ReadValue GlucoseTxMessage, %s", err)
-			return
+			//return err
 		} else {
 			log.Infof("Rx = %x", response)
 			gluc_message = messages.NewGlucoseRxMessage(response)
-			log.Infof("NewGlucoseRxMessage = %v", gluc_message)
-			log.Infof("Glucose = %v", gluc_message.Glucose)
-			log.Infof("GlucoseBytes = %v", gluc_message.GlucoseBytes)
-			log.Infof("Timestamp = %v", gluc_message.Timestamp)
-			log.Infof("State = %v", gluc_message.State)
-			log.Infof("Status = %v", gluc_message.Status)
-			log.Infof("Sequence = %v", gluc_message.Sequence)
-			log.Infof("Trend = %v", gluc_message.Trend)
-			log.Infof("GlucoseIsDisplayOnly = %v", gluc_message.GlucoseIsDisplayOnly)
+			/*
+				log.Debugf("NewGlucoseRxMessage = %v", gluc_message)
+				log.Debugf("Glucose = %v", gluc_message.Glucose)
+				log.Debugf("GlucoseBytes = %v", gluc_message.GlucoseBytes)
+				log.Debugf("Timestamp = %v", gluc_message.Timestamp)
+				log.Debugf("State = %v", gluc_message.State)
+				log.Debugf("Status = %v", gluc_message.Status)
+				log.Debugf("Sequence = %v", gluc_message.Sequence)
+				log.Debugf("Trend = %v", gluc_message.Trend)
+				log.Debugf("GlucoseIsDisplayOnly = %v", gluc_message.GlucoseIsDisplayOnly)
+			*/
 		}
 
 		msg := messages.NewSensorTxMessage()
 		err = control.WriteValue(msg.Data, options)
 		if err != nil {
 			log.Errorf("WriteValue sensor_tx, %s", err)
-			return
+			//return err
 		}
 
 		log.Infof("SensorTxMessage = %x", msg.Data)
@@ -142,18 +163,19 @@ func findControlServiceAndControl(dev *api.Device) {
 		response, err = control.ReadValue(options)
 		if err != nil {
 			log.Errorf("ReadValue SensorTxMessage, %s", err)
-			return
+			//return err
 		} else {
 			log.Infof("Rx = %x", response)
 			sensor_message = messages.NewSensorRxMessage(response)
-			log.Infof("NewSensorRxMessage = %v", sensor_message)
-			log.Infof("Sensor.Status = %v", sensor_message.Status)
-			log.Infof("Sensor.Timestamp = %v", sensor_message.Timestamp)
-			log.Infof("Sensor.Unfiltered = %v", sensor_message.Unfiltered)
-			log.Infof("Sensor.Filtered = %v", sensor_message.Filtered)
+			/*
+				log.Debugf("NewSensorRxMessage = %v", sensor_message)
+				log.Debugf("Sensor.Status = %v", sensor_message.Status)
+				log.Debugf("Sensor.Timestamp = %v", sensor_message.Timestamp)
+				log.Debugf("Sensor.Unfiltered = %v", sensor_message.Unfiltered)
+				log.Debugf("Sensor.Filtered = %v", sensor_message.Filtered)
+			*/
 		}
 
-		//		sync_date := time.Now().UnixNano() / 1000000
 		sync_date := nightscout.Date(time.Now()) // time since 1970 in ms
 		g := NewGlucose(gluc_message, time_rx_message, sensor_message, sync_date, getDeviceRSSI(), getDeviceName())
 
@@ -162,10 +184,11 @@ func findControlServiceAndControl(dev *api.Device) {
 		deleteFile("/root/myopenaps/monitor/logger/entry2.json")
 		createFile("/root/myopenaps/monitor/logger/entry2.json")
 		writeFile("/root/myopenaps/monitor/logger/entry2.json", "["+string(gluc_marshalled)+"]")
-		os.Exit(0)
+		// TODO: fix this to not exit here
+		//os.Exit(0)
 
 	}
-	return
+	return err
 }
 
 func authenticate(auth *profile.GattCharacteristic1) {

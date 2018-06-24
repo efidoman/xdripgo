@@ -20,7 +20,7 @@ func createFile(path string) {
 		defer file.Close()
 	}
 
-	log.Infof("File Created Successfully", path)
+	log.Infof("File Created Successfully, %s", path)
 }
 
 func writeFile(path string, value string) {
