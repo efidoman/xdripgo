@@ -5,6 +5,7 @@ import (
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/bluez/profile"
 	"github.com/muka/go-bluetooth/emitter"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -36,10 +37,12 @@ func GetDevice() *api.Device {
 	return dev
 }
 
-func DiscoverDevice(name string) error {
+type ExitDiscovery func(int)
+
+func DiscoverDevice(name string, adapter_id string, complete_cb ExitDiscovery) error {
 
 	time.Sleep(time.Millisecond * 50)
-	err := api.StartDiscovery()
+	err := api.StartDiscoveryOn(adapter_id)
 	if err != nil {
 		log.Errorf("Failed to start discovery: %s", err.Error())
 		return err
@@ -49,7 +52,7 @@ func DiscoverDevice(name string) error {
 	if err != nil {
 		return err
 	}
-	adapter := profile.NewAdapter1("hci0")
+	adapter := profile.NewAdapter1(adapter_id)
 
 	for _, d := range devices {
 		p, err := d.GetProperties()
@@ -68,28 +71,26 @@ func DiscoverDevice(name string) error {
 		if filterDevice(devTry, name) {
 			dev = devTry
 			// on rpi zero hat if I stopDiscovery before Connect it stops having the software caused connect abort error - I think
-			stopDiscovery()
+			err := api.StopDiscoveryOn(adapter_id)
+			if err != nil {
+				log.Errorf("Failed StopDiscovery %s", err)
+			} else {
+				log.Info("Discovery Stopped")
+			}
 			Retry(8, time.Millisecond*20, getDeviceProperties)
 			Retry(8, time.Millisecond*20, connectDevice)
 			findAuthenticationServiceAndAuthenticate()
-			//stopDiscovery()
+			if complete_cb != nil {
+				complete_cb(0)
+			} else {
+				os.Exit(0)
+			}
 		} else {
-			//log.Debugf("DiscoveryEvent was %v", discoveryEvent)
-			//log.Debugf("ev was %v", ev)
+			log.Debugf("DiscoveryEvent was %v, ev was %v", discoveryEvent, ev)
 		}
 	}))
 
 	return err
-}
-
-func stopDiscovery() {
-	log.Debug("Stopping discovery")
-	err := api.StopDiscovery()
-	if err != nil {
-		log.Errorf("Failed StopDiscovery %s", err)
-	} else {
-		log.Info("Discovery Stopped")
-	}
 }
 
 func getDeviceProperties() error {
@@ -123,7 +124,7 @@ func connectDevice() error {
 
 func filterDevice(dev *api.Device, name string) bool {
 	if dev == nil {
-		log.Error("filterDevice dev = nil")
+		//log.Error("filterDevice dev = nil")
 		return false
 	}
 	p, err := dev.GetProperties()

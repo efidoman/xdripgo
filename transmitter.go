@@ -45,7 +45,7 @@ func AuthenticateWithoutDiscovery() error {
 	if err != nil {
 		log.Debugf("GetCharByUUID looking for=%s, %s", Authentication, err)
 	} else {
-		log.Debugf("GetCharByUUID auth=", auth)
+		log.Infof("GetCharByUUID auth=%v", auth)
 		authenticate(auth)
 		findControlServiceAndControl(dev)
 	}
@@ -55,6 +55,9 @@ func AuthenticateWithoutDiscovery() error {
 func findAuthenticationServiceAndAuthenticate() {
 	dev = GetDevice()
 	//time.Sleep(1200 * time.Millisecond)
+	// No discovery of uuid required, it'll be there within a few 100 milliseconds
+	// so retry up to 8 times start with 20 milliseconds delay and double each time
+	// AuthenticateWithoutDiscovery returns error
 	Retry(8, time.Millisecond*20, AuthenticateWithoutDiscovery)
 	/* don't have to do this discovery
 	err := dev.On("char", emitter.NewCallback(func(ev emitter.Event) {
@@ -114,10 +117,10 @@ func findControlServiceAndControl(dev *api.Device) error {
 		} else {
 			log.Infof("Rx = %x", response)
 			time_rx_message = messages.NewTransmitterTimeRxMessage(response)
-			log.Infof("NewTransmitterTimeRxMessage = %v", time_rx_message)
-			log.Infof("Status = %v", time_rx_message.Status)
-			log.Infof("CurrentTime = %v", time_rx_message.CurrentTime)
-			log.Infof("SessionStartTime = %v", time_rx_message.SessionStartTime)
+			//log.Debugf("NewTransmitterTimeRxMessage = %v", time_rx_message)
+			//log.Debugf("Status = %v", time_rx_message.Status)
+			//log.Debugf("CurrentTime = %v", time_rx_message.CurrentTime)
+			//log.Debugf("SessionStartTime = %v", time_rx_message.SessionStartTime)
 		}
 
 		// TODO: implement message processing, but for now get glucose first
@@ -241,9 +244,8 @@ func authenticate(auth *profile.GattCharacteristic1) {
 	} else {
 		log.Infof("Rx = %x", response)
 		status = messages.NewAuthStatusRxMessage(response)
-		log.Debugf("AuthStatusRxMessage = %v", status)
-		log.Debugf("AuthStatusRxMessage = %v", status)
-		log.Debugf("Bonded = %v", status.Bonded)
+		//log.Debugf("AuthStatusRxMessage = %v", status)
+		//log.Debugf("Bonded = %v", status.Bonded)
 		log.Debugf("Authenticated = %v", status.Authenticated)
 		if status.Authenticated != 1 {
 			log.Error("transmitter rejected auth challenge")

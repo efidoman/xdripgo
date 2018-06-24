@@ -62,10 +62,17 @@ func main() {
 	//xdripgo.DeferExit() // needs to be done here so things cleanup when program exits
 	xdripgo.RemoveDevice(name)
 
-	err := xdripgo.DiscoverDevice(name)
+	err := xdripgo.DiscoverDevice(name, *adapter_id, ExitCleanup)
+
 	if err != nil {
 		log.Fatalf("discoverDevice failed - %s", err)
 	}
 
 	select {}
+}
+
+func ExitCleanup(return_val int) {
+	log.Info("Cleaning up after Discovery and Exitting")
+	api.Exit()
+	os.Exit(return_val)
 }
