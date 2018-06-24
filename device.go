@@ -1,19 +1,28 @@
 package xdripgo
 
 import (
+	"errors"
 	log "github.com/Sirupsen/logrus"
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/bluez/profile"
 	"github.com/muka/go-bluetooth/emitter"
-	"os"
 	"os/exec"
 	"time"
 )
 
 var (
-	props *profile.Device1Properties
-	dev   *api.Device
+	props      *profile.Device1Properties
+	dev        *api.Device
+	adapter_id string
 )
+
+func SetDevice(d *api.Device) {
+	dev = d
+}
+
+func GetDevice() *api.Device {
+	return dev
+}
 
 func getDeviceName() string {
 	return props.Name
@@ -23,73 +32,119 @@ func getDeviceRSSI() int {
 	return int(props.RSSI)
 }
 
-func RemoveDevice(name string) {
-	cmd := "bt-device"
-	args := []string{"-r", name}
+func RestartBluetooth() {
+	cmd := "systemctl"
+	args := []string{"restart", "bluetooth.service"}
 	if err := exec.Command(cmd, args...).Run(); err != nil {
-		log.Warnf("Remove bt device from cach, cmd(%s %v), %s", cmd, args, err)
+		log.Warnf("Restart bt service, cmd(%s %v), %s", cmd, args, err)
 	} else {
-		log.Infof("Successfully removed device from cache - %s %s", cmd, args)
+		log.Infof("Successfully restarted bt service, cmd(%s %s)", cmd, args)
+		//		time.Sleep(time.Second * 5) // give OS/BT time to remove
 	}
 }
 
-func GetDevice() *api.Device {
-	return dev
+func SetAdapterID(id string) {
+	adapter_id = id
 }
 
-type ExitDiscovery func(int)
+func GetAdapterID() string {
+	return adapter_id
+}
 
-func DiscoverDevice(name string, adapter_id string, complete_cb ExitDiscovery) error {
-
-	time.Sleep(time.Millisecond * 50)
-	err := api.StartDiscoveryOn(adapter_id)
-	if err != nil {
-		log.Errorf("Failed to start discovery: %s", err.Error())
-		return err
-	}
-
+func RemoveDevice(name string, adapter_id string) {
+	SetAdapterID(adapter_id)
+	// darn bte crap - try double remove
 	devices, err := api.GetDevices()
 	if err != nil {
-		return err
-	}
-	adapter := profile.NewAdapter1(adapter_id)
+		adapter := profile.NewAdapter1(adapter_id)
 
-	for _, d := range devices {
-		p, err := d.GetProperties()
+		for _, d := range devices {
+			p, err := d.GetProperties()
 
-		if err == nil {
-			if p.Name == name {
-				err = adapter.RemoveDevice(d.Path)
+			if err == nil {
+				if p.Name == name {
+					err = adapter.RemoveDevice(d.Path)
+				}
 			}
 		}
 	}
 
+	// os remove 2nd remove try - let's make sure this thing is removed
+	cmd := "bt-device"
+	args := []string{"-r", name}
+	if err := exec.Command(cmd, args...).Run(); err != nil {
+		log.Warnf("Remove bt device from cache, cmd(%s %v), %s", cmd, args, err)
+	} else {
+		log.Infof("Successfully removed device from cache, cmd(%s %s)", cmd, args)
+		time.Sleep(time.Second * 2) // sleep 2 seconds to give OS/BT time to remove
+	}
+}
+
+type FoundDiscovery func(*api.Device)
+
+func FindCachedDevice(name string) (*api.Device, error) {
+	//setDeviceName(name)
+
+	var err error
+	devices, err := api.GetDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dev := range devices {
+		if filterDevice(&dev, name) {
+			return &dev, nil
+		}
+	}
+
+	return nil, errors.New("Device not cached, must Discover")
+}
+
+func startDiscovery() error {
+	err := api.StartDiscoveryOn(adapter_id)
+	if err != nil {
+		log.Debugf("... startDiscovery: %s", err)
+	} else {
+		log.Info("... startDiscovery: Started")
+	}
+	return err
+}
+
+func PostDiscoveryProcessing() {
+	Retry(8, time.Millisecond*20, getDeviceProperties)
+	// here
+	// try for 5 minutes, 15 seconds in case of cached device
+	// math works out to 62 times
+	for i := 0; i < 62; i++ {
+		log.Debugf("Connect Retry iteration %d", i)
+		err := Retry(8, time.Millisecond*20, connectDevice)
+		if err == nil {
+			i = 62 // done in this case
+		}
+	}
+	findAuthenticationServiceAndAuthenticate()
+}
+
+func DiscoverDevice(name string, adapter_id string, found_cb FoundDiscovery) error {
+
+	SetAdapterID(adapter_id)
+	Retry(10, time.Millisecond*100, startDiscovery)
+
 	log.Infof("Started discovery - looking for device: %s", name)
-	err = api.On("discovery", emitter.NewCallback(func(ev emitter.Event) {
+	err := api.On("discovery", emitter.NewCallback(func(ev emitter.Event) {
 		discoveryEvent := ev.GetData().(api.DiscoveredDeviceEvent)
 		devTry := discoveryEvent.Device
 		if filterDevice(devTry, name) {
 			dev = devTry
-			// on rpi zero hat if I stopDiscovery before Connect it stops having the software caused connect abort error - I think
 			err := api.StopDiscoveryOn(adapter_id)
 			if err != nil {
 				log.Errorf("Failed StopDiscovery %s", err)
 			} else {
 				log.Info("Discovery Stopped")
 			}
-			Retry(8, time.Millisecond*20, getDeviceProperties)
-			Retry(8, time.Millisecond*20, connectDevice)
-			findAuthenticationServiceAndAuthenticate()
-			if complete_cb != nil {
-				complete_cb(0)
-			} else {
-				os.Exit(0)
-			}
-		} else {
-			log.Debugf("DiscoveryEvent was %v, ev was %v", discoveryEvent, ev)
+			found_cb(dev)
 		}
 	}))
-
 	return err
 }
 
@@ -110,14 +165,16 @@ func getDeviceProperties() error {
 
 func connectDevice() error {
 	dev = GetDevice()
-	var err error
-	//time.Sleep(time.Millisecond * 15)
-	err = dev.Connect()
-	if err != nil {
-		log.Errorf("connectDevice, ", err)
-	} else {
-		log.Infof("Connected to name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
-		time.Sleep(time.Millisecond * 15)
+	var err error = nil
+
+	if !dev.IsConnected() {
+		err = dev.Connect()
+		if err != nil {
+			log.Errorf("connectDevice, %s", err)
+		} else {
+			log.Infof("Connected to name=%s addr=%s rssi=%d", props.Name, props.Address, props.RSSI)
+			time.Sleep(time.Millisecond * 15)
+		}
 	}
 	return err
 }
@@ -137,7 +194,7 @@ func filterDevice(dev *api.Device, name string) bool {
 		log.Debugf("skipping(%s) addr(%s) rssi(%d), want(%s)", p.Name, p.Address, p.RSSI, name)
 		return false
 	} else {
-		log.Debugf("found(%s) rssi(%d), wanted(%s)", p.Name, p.RSSI, name)
+		log.Debugf("found(%s) addr(%s) rssi(%d), wanted(%s)", p.Name, p.Address, p.RSSI, name)
 		return true
 	}
 }

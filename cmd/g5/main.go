@@ -55,15 +55,24 @@ func main() {
 	defer api.Exit()
 	xdripgo.SetDexcomID(id)
 	name = xdripgo.GetDexcomName()
+
 	log.Infof("Dexcom Transmitter Serial Number=%s, adapter=%s, id=%s", name, *adapter_id, xdripgo.GetDexcomID())
 
 	log.SetLevel(logLevel)
 
 	//xdripgo.DeferExit() // needs to be done here so things cleanup when program exits
-	xdripgo.RemoveDevice(name)
+	// in case the bt tx device didn't get removed after last discovery, remove again here
+	// xdripgo.RemoveDevice(name, *adapter_id)
+	// xdripgo.RestartBluetooth()
 
-	err := xdripgo.DiscoverDevice(name, *adapter_id, ExitCleanup)
-
+	_, err := xdripgo.FindCachedDevice(name)
+	if err == nil {
+		log.Info("Found cached device")
+		//		xdripgo.SetDevice(dev)
+		//		foundDevice(dev)
+		xdripgo.RemoveDevice(name, *adapter_id)
+	}
+	err = xdripgo.DiscoverDevice(name, *adapter_id, foundDevice)
 	if err != nil {
 		log.Fatalf("discoverDevice failed - %s", err)
 	}
@@ -71,8 +80,16 @@ func main() {
 	select {}
 }
 
-func ExitCleanup(return_val int) {
-	log.Info("Cleaning up after Discovery and Exitting")
+func foundDevice(dev *api.Device) {
+
+	xdripgo.PostDiscoveryProcessing()
+	log.Info("Cleaning up and Exitting")
+	log.Debug("... api.Exit()")
 	api.Exit()
-	os.Exit(return_val)
+	//log.Debugf("... xdripgo.RemoveDevice(%s, %s)", name, *adapter_id)
+	//xdripgo.RemoveDevice(name, *adapter_id)
+	//log.Debug("... xdripgo.RestartBluetooth()")
+	//xdripgo.RestartBluetooth()
+	log.Debug("... os.Exit(0)")
+	os.Exit(0)
 }
