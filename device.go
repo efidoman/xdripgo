@@ -52,6 +52,9 @@ func GetAdapterID() string {
 }
 
 func RemoveDevice(name string, adapter_id string) {
+        // just for now try this
+	return
+
 	SetAdapterID(adapter_id)
 	// darn bte crap - try double remove
 	devices, err := api.GetDevices()
@@ -112,16 +115,7 @@ func startDiscovery() error {
 
 func PostDiscoveryProcessing() {
 	Retry(8, time.Millisecond*20, getDeviceProperties)
-	// here
-	// try for 5 minutes, 15 seconds in case of cached device
-	// math works out to 62 times
-	for i := 0; i < 62; i++ {
-		log.Debugf("Connect Retry iteration %d", i)
-		err := Retry(8, time.Millisecond*20, connectDevice)
-		if err == nil {
-			i = 62 // done in this case
-		}
-	}
+	Retry(8, time.Millisecond*20, connectDevice)
 	findAuthenticationServiceAndAuthenticate()
 }
 
