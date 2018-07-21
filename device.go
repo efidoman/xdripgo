@@ -52,9 +52,6 @@ func GetAdapterID() string {
 }
 
 func RemoveDevice(name string, adapter_id string) {
-        // just for now try this
-	return
-
 	SetAdapterID(adapter_id)
 	// darn bte crap - try double remove
 	devices, err := api.GetDevices()
